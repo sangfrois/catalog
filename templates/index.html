@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    .map-container {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        background: var(--bg);
+        overflow: hidden;
+    }
+    
+    .floorplan {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 80vmin;
+        height: 60vmin;
+        border: 2px solid var(--primary);
+        background: rgba(255, 255, 255, 0.9);
+    }
+    
+    .project-hotspot {
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        border: 2px solid var(--accent);
+        border-radius: 50%;
+        background: rgba(0, 255, 136, 0.1);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+    }
+    
+    .project-hotspot:hover {
+        transform: scale(1.2);
+        background: var(--accent);
+        color: var(--primary);
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+    }
+    
+    .project-preview {
+        position: absolute;
+        background: var(--secondary);
+        border: 1px solid var(--primary);
+        padding: 15px;
+        max-width: 300px;
+        box-shadow: 4px 4px 0 var(--primary);
+        z-index: 100;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+    
+    .project-preview.show {
+        opacity: 1;
+        pointer-events: all;
+    }
+    
+    .intro-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.9);
+        color: var(--secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        opacity: 1;
+        transition: opacity 1s ease;
+    }
+    
+    .intro-overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+    
+    .intro-text {
+        text-align: center;
+        max-width: 600px;
+        padding: 40px;
+    }
+    
+    .intro-text h1 {
+        font-size: 3rem;
+        margin-bottom: 2rem;
+        animation: glitch 3s infinite;
+    }
+    
+    .intro-text p {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+        opacity: 0;
+        animation: fadeIn 1s ease-in 1s forwards;
+    }
+    
+    .enter-btn {
+        background: none;
+        border: 2px solid var(--accent);
+        color: var(--accent);
+        padding: 15px 30px;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        opacity: 0;
+        animation: fadeIn 1s ease-in 2s forwards;
+    }
+    
+    .enter-btn:hover {
+        background: var(--accent);
+        color: var(--primary);
+        transform: translate(-2px, -2px);
+        box-shadow: 2px 2px 0 var(--accent);
+    }
+    
+    .floating-fragments {
+        position: absolute;
+        font-size: 12px;
+        color: var(--muted);
+        opacity: 0.3;
+        animation: float 10s infinite linear;
+        pointer-events: none;
+    }
+    
+    @keyframes float {
+        0% { transform: translateY(100vh) rotate(0deg); }
+        100% { transform: translateY(-100px) rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="intro-overlay" id="introOverlay">
+    <div class="intro-text">
+        <h1 class="glitch">MACHINIC<br>ENCOUNTERS</h1>
+        <p>An exhibition exploring the thresholds of human-machine encounters</p>
+        <button class="enter-btn" onclick="enterExhibition()">ENTER</button>
+    </div>
+</div>
+
+<div class="map-container">
+    <div class="floorplan" id="floorplan">
+        {% for project_id, project in projects.items() %}
+        <div class="project-hotspot" 
+             style="left: {{ project.position.x }}%; top: {{ project.position.y }}%;"
+             data-project="{{ project_id }}"
+             onmouseenter="showPreview(event, '{{ project_id }}')"
+             onmouseleave="hidePreview()"
+             onclick="visitProject('{{ project_id }}')">
+            {{ loop.index }}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="project-preview" id="projectPreview">
+        <h3 id="previewTitle"></h3>
+        <p class="mono muted" id="previewArtist"></p>
+        <p id="previewDesc"></p>
+        <p class="mono accent" id="previewVibe"></p>
+    </div>
+</div>
+
+<!-- Floating text fragments -->
+<div class="floating-fragments" style="left: 10%; animation-delay: 0s;">encounter</div>
+<div class="floating-fragments" style="left: 30%; animation-delay: 2s;">threshold</div>
+<div class="floating-fragments" style="left: 50%; animation-delay: 4s;">machine</div>
+<div class="floating-fragments" style="left: 70%; animation-delay: 6s;">agency</div>
+<div class="floating-fragments" style="left: 90%; animation-delay: 8s;">relation</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const projects = {{ projects | tojsonfilter }};
+    
+    function enterExhibition() {
+        document.getElementById('introOverlay').classList.add('hidden');
+        // Start floating fragments
+        createFloatingFragments();
+    }
+    
+    function createFloatingFragments() {
+        const fragments = ['encounter', 'threshold', 'machine', 'agency', 'relation', 'awe', 'wonder', 'glitch', 'dream', 'memory'];
+        
+        setInterval(() => {
+            if (Math.random() < 0.3) {
+                const fragment = document.createElement('div');
+                fragment.className = 'floating-fragments';
+                fragment.textContent = fragments[Math.floor(Math.random() * fragments.length)];
+                fragment.style.left = Math.random() * 100 + '%';
+                fragment.style.animationDuration = (8 + Math.random() * 4) + 's';
+                document.body.appendChild(fragment);
+                
+                setTimeout(() => {
+                    fragment.remove();
+                }, 12000);
+            }
+        }, 3000);
+    }
+    
+    function showPreview(event, projectId) {
+        const project = projects[projectId];
+        const preview = document.getElementById('projectPreview');
+        
+        document.getElementById('previewTitle').textContent = project.title;
+        document.getElementById('previewArtist').textContent = project.artist;
+        document.getElementById('previewDesc').textContent = project.desc.substring(0, 150) + '...';
+        document.getElementById('previewVibe').textContent = project.vibe;
+        
+        preview.style.left = event.pageX + 20 + 'px';
+        preview.style.top = event.pageY - 50 + 'px';
+        preview.classList.add('show');
+    }
+    
+    function hidePreview() {
+        document.getElementById('projectPreview').classList.remove('show');
+    }
+    
+    function visitProject(projectId) {
+        trackVisit(projectId);
+        window.location.href = `/project/${projectId}`;
+    }
+</script>
+{% endblock %}

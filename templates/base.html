@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Machinic Encounters{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #000;
+            --secondary: #fff;
+            --accent: #00ff88;
+            --muted: #666;
+            --bg: #fafafa;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Crimson Text', serif;
+            background: var(--bg);
+            color: var(--primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 300;
+        }
+        
+        .glitch {
+            position: relative;
+            animation: glitch 2s infinite;
+        }
+        
+        @keyframes glitch {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-1px, 1px); }
+            40% { transform: translate(-1px, -1px); }
+            60% { transform: translate(1px, 1px); }
+            80% { transform: translate(1px, -1px); }
+        }
+        
+        .fade-in {
+            opacity: 0;
+            animation: fadeIn 1s ease-in forwards;
+        }
+        
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        
+        .nav {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .nav a {
+            color: var(--primary);
+            text-decoration: none;
+            padding: 8px 16px;
+            border: 1px solid var(--primary);
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        
+        .nav a:hover {
+            background: var(--accent);
+            color: var(--primary);
+            transform: translate(-2px, -2px);
+            box-shadow: 2px 2px 0 var(--primary);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h1, h2, h3 {
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        
+        .accent {
+            color: var(--accent);
+        }
+        
+        .muted {
+            color: var(--muted);
+        }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <nav class="nav">
+        <a href="/">Map</a>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/trace">Trace</a>
+    </nav>
+    
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        // Generate or retrieve visitor ID
+        let visitorId = localStorage.getItem('machinic_visitor_id');
+        if (!visitorId) {
+            visitorId = 'visitor_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('machinic_visitor_id', visitorId);
+        }
+        
+        // Initialize socket
+        const socket = io();
+        
+        // Utility functions
+        function trackVisit(projectId) {
+            fetch('/visit', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    project: projectId,
+                    visitor_id: visitorId
+                })
+            });
+        }
+        
+        function submitFeedback(projectId, content) {
+            return fetch('/feedback', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    project: projectId,
+                    content: content,
+                    visitor_id: visitorId
+                })
+            });
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

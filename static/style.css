@@ -1,0 +1,104 @@
+/* Additional global styles for enhanced surrealist aesthetic */
+
+.typewriter {
+    overflow: hidden;
+    border-right: .15em solid var(--accent);
+    white-space: nowrap;
+    margin: 0 auto;
+    letter-spacing: .15em;
+    animation: typing 3.5s steps(40, end), blink-caret .75s step-end infinite;
+}
+
+@keyframes typing {
+    from { width: 0 }
+    to { width: 100% }
+}
+
+@keyframes blink-caret {
+    from, to { border-color: transparent }
+    50% { border-color: var(--accent); }
+}
+
+.distort {
+    filter: hue-rotate(90deg) saturate(1.5);
+    animation: distort 4s infinite alternate;
+}
+
+@keyframes distort {
+    0% { filter: hue-rotate(0deg) saturate(1); }
+    25% { filter: hue-rotate(90deg) saturate(1.5); }
+    50% { filter: hue-rotate(180deg) saturate(0.8); }
+    75% { filter: hue-rotate(270deg) saturate(1.2); }
+    100% { filter: hue-rotate(360deg) saturate(1); }
+}
+
+.scatter-text {
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.scatter-text:hover {
+    transform: rotate(5deg) scale(1.1);
+    color: var(--accent);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .nav {
+        top: 10px;
+        right: 10px;
+        gap: 8px;
+    }
+    
+    .nav a {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+    
+    .project-hotspot {
+        width: 30px;
+        height: 30px;
+        font-size: 10px;
+    }
+    
+    .project-preview {
+        max-width: 250px;
+        padding: 10px;
+    }
+    
+    .intro-text h1 {
+        font-size: 2rem;
+    }
+    
+    .dashboard-title {
+        font-size: 1.5rem;
+    }
+    
+    .mode-toggle {
+        top: 10px;
+        right: 10px;
+        gap: 5px;
+    }
+    
+    .mode-btn {
+        padding: 6px 12px;
+        font-size: 10px;
+    }
+}
+
+/* Print styles for documentation */
+@media print {
+    .nav, .mode-toggle, .floating-fragments {
+        display: none;
+    }
+    
+    body {
+        background: white;
+        color: black;
+    }
+    
+    .dashboard-container {
+        background: white;
+        color: black;
+    }
+}

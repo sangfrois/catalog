@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    .dashboard-container {
+        width: 100vw;
+        height: 100vh;
+        background: var(--primary);
+        color: var(--secondary);
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .dashboard-header {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 100;
+    }
+    
+    .dashboard-title {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        color: var(--accent);
+    }
+    
+    .dashboard-subtitle {
+        font-size: 1rem;
+        opacity: 0.7;
+    }
+    
+    .viz-container {
+        width: 100%;
+        height: 100%;
+        position: relative;
+    }
+    
+    .mode-toggle {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 100;
+        display: flex;
+        gap: 10px;
+    }
+    
+    .mode-btn {
+        background: none;
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        padding: 8px 16px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .mode-btn.active {
+        background: var(--accent);
+        color: var(--primary);
+    }
+    
+    .mode-btn:hover {
+        background: var(--accent);
+        color: var(--primary);
+    }
+    
+    #wordcloud {
+        width: 100%;
+        height: 100%;
+    }
+    
+    .stats-overlay {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        opacity: 0.7;
+    }
+    
+    .live-indicator {
+        position: absolute;
+        top: 80px;
+        left: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        opacity: 0.8;
+    }
+    
+    .live-dot {
+        width: 8px;
+        height: 8px;
+        background: var(--accent);
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+    }
+    
+    .word-node {
+        position: absolute;
+        color: var(--secondary);
+        font-size: 16px;
+        transition: all 0.5s ease;
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    .word-node:hover {
+        color: var(--accent);
+        transform: scale(1.2);
+    }
+    
+    .connection-line {
+        position: absolute;
+        height: 1px;
+        background: rgba(0, 255, 136, 0.2);
+        transform-origin: left center;
+        transition: opacity 0.5s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1 class="dashboard-title glitch">COLLECTIVE MIND</h1>
+        <p class="dashboard-subtitle mono">Live visualization of participant thoughts</p>
+    </div>
+    
+    <div class="live-indicator">
+        <div class="live-dot"></div>
+        <span class="mono">LIVE</span>
+    </div>
+    
+    <div class="mode-toggle">
+        <button class="mode-btn active" onclick="setMode('wordcloud')">Words</button>
+        <button class="mode-btn" onclick="setMode('network')">Network</button>
+        <button class="mode-btn" onclick="setMode('flow')">Flow</button>
+    </div>
+    
+    <div class="viz-container">
+        <div id="wordcloud"></div>
+    </div>
+    
+    <div class="stats-overlay">
+        <div>Thoughts collected: <span id="thoughtCount">0</span></div>
+        <div>Active connections: <span id="connectionCount">0</span></div>
+        <div>Last update: <span id="lastUpdate">--:--</span></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+    let currentMode = 'wordcloud';
+    let wordData = {};
+    let thoughtCount = 0;
+    
+    // Initialize visualization
+    initDashboard();
+    
+    function initDashboard() {
+        loadWordcloud();
+        
+        // Listen for real-time updates
+        socket.on('new_feedback', function(data) {
+            thoughtCount++;
+            document.getElementById('thoughtCount').textContent = thoughtCount;
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+            
+            // Add new words to visualization
+            addNewWords(data.content);
+        });
+        
+        // Refresh data every 30 seconds
+        setInterval(loadWordcloud, 30000);
+    }
+    
+    function loadWordcloud() {
+        fetch('/api/wordcloud')
+            .then(response => response.json())
+            .then(data => {
+                wordData = data;
+                thoughtCount = Object.values(data).reduce((a, b) => a + b, 0);
+                document.getElementById('thoughtCount').textContent = thoughtCount;
+                
+                if (currentMode === 'wordcloud') {
+                    renderWordcloud();
+                } else if (currentMode === 'network') {
+                    renderNetwork();
+                } else if (currentMode === 'flow') {
+                    renderFlow();
+                }
+            });
+    }
+    
+    function setMode(mode) {
+        currentMode = mode;
+        
+        // Update button states
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        // Clear and render new visualization
+        document.getElementById('wordcloud').innerHTML = '';
+        
+        if (mode === 'wordcloud') {
+            renderWordcloud();
+        } else if (mode === 'network') {
+            renderNetwork();
+        } else if (mode === 'flow') {
+            renderFlow();
+        }
+    }
+    
+    function renderWordcloud() {
+        const container = document.getElementById('wordcloud');
+        const words = Object.entries(wordData);
+        
+        if (words.length === 0) return;
+        
+        const maxFreq = Math.max(...Object.values(wordData));
+        
+        words.forEach(([word, freq]) => {
+            const wordEl = document.createElement('div');
+            wordEl.className = 'word-node';
+            wordEl.textContent = word;
+            
+            const size = 12 + (freq / maxFreq) * 48;
+            const x = Math.random() * (window.innerWidth - 200);
+            const y = Math.random() * (window.innerHeight - 100) + 100;
+            
+            wordEl.style.cssText = `
+                left: ${x}px;
+                top: ${y}px;
+                font-size: ${size}px;
+                opacity: ${0.3 + (freq / maxFreq) * 0.7};
+            `;
+            
+            container.appendChild(wordEl);
+            
+            // Animate in
+            setTimeout(() => {
+                wordEl.style.transform = 'scale(1)';
+            }, Math.random() * 1000);
+        });
+    }
+    
+    function renderNetwork() {
+        const container = document.getElementById('wordcloud');
+        const words = Object.entries(wordData).slice(0, 20); // Limit for performance
+        
+        if (words.length === 0) return;
+        
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+        const radius = Math.min(centerX, centerY) * 0.6;
+        
+        words.forEach(([word, freq], index) => {
+            const angle = (index / words.length) * 2 * Math.PI;
+            const x = centerX + Math.cos(angle) * radius;
+            const y = centerY + Math.sin(angle) * radius;
+            
+            const wordEl = document.createElement('div');
+            wordEl.className = 'word-node';
+            wordEl.textContent = word;
+            wordEl.style.cssText = `
+                left: ${x}px;
+                top: ${y}px;
+                font-size: ${12 + freq * 2}px;
+            `;
+            
+            container.appendChild(wordEl);
+            
+            // Create connections to center
+            if (Math.random() < 0.3) {
+                const line = document.createElement('div');
+                line.className = 'connection-line';
+                const length = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+                const angle = Math.atan2(y - centerY, x - centerX);
+                
+                line.style.cssText = `
+                    left: ${centerX}px;
+                    top: ${centerY}px;
+                    width: ${length}px;
+                    transform: rotate(${angle}rad);
+                `;
+                
+                container.appendChild(line);
+            }
+        });
+        
+        document.getElementById('connectionCount').textContent = container.querySelectorAll('.connection-line').length;
+    }
+    
+    function renderFlow() {
+        const container = document.getElementById('wordcloud');
+        const words = Object.entries(wordData);
+        
+        words.forEach(([word, freq], index) => {
+            setTimeout(() => {
+                const wordEl = document.createElement('div');
+                wordEl.className = 'word-node';
+                wordEl.textContent = word;
+                
+                const startX = Math.random() * window.innerWidth;
+                const endX = Math.random() * window.innerWidth;
+                const duration = 5000 + Math.random() * 5000;
+                
+                wordEl.style.cssText = `
+                    left: ${startX}px;
+                    top: ${window.innerHeight + 50}px;
+                    font-size: ${12 + freq * 2}px;
+                    transition: all ${duration}ms linear;
+                `;
+                
+                container.appendChild(wordEl);
+                
+                setTimeout(() => {
+                    wordEl.style.left = endX + 'px';
+                    wordEl.style.top = '-50px';
+                    wordEl.style.opacity = '0';
+                }, 100);
+                
+                setTimeout(() => {
+                    wordEl.remove();
+                }, duration + 100);
+            }, index * 500);
+        });
+    }
+    
+    function addNewWords(content) {
+        if (currentMode !== 'flow') return;
+        
+        const words = content.split(' ').slice(0, 3);
+        const container = document.getElementById('wordcloud');
+        
+        words.forEach((word, index) => {
+            setTimeout(() => {
+                const wordEl = document.createElement('div');
+                wordEl.className = 'word-node';
+                wordEl.textContent = word;
+                wordEl.style.cssText = `
+                    left: ${Math.random() * window.innerWidth}px;
+                    top: ${window.innerHeight}px;
+                    font-size: 24px;
+                    color: var(--accent);
+                    transition: all 3s ease-out;
+                `;
+                
+                container.appendChild(wordEl);
+                
+                setTimeout(() => {
+                    wordEl.style.top = '-50px';
+                    wordEl.style.opacity = '0';
+                }, 100);
+                
+                setTimeout(() => {
+                    wordEl.remove();
+                }, 3100);
+            }, index * 300);
+        });
+    }
+</script>
+{% endblock %}

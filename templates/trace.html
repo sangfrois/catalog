@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    .trace-container {
+        min-height: 100vh;
+        padding: 80px 20px 40px;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    
+    .trace-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+    
+    .trace-title {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        animation: glitch 5s infinite;
+    }
+    
+    .trace-subtitle {
+        color: var(--muted);
+        font-size: 1.1rem;
+    }
+    
+    .visitor-id {
+        background: var(--bg);
+        border: 1px solid var(--muted);
+        padding: 10px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        margin: 2rem 0;
+        text-align: center;
+        color: var(--muted);
+    }
+    
+    .trace-section {
+        margin-bottom: 3rem;
+        border-left: 2px solid var(--accent);
+        padding-left: 2rem;
+    }
+    
+    .trace-section h3 {
+        color: var(--accent);
+        margin-bottom: 1.5rem;
+    }
+    
+    .visit-item, .feedback-item {
+        background: rgba(0, 255, 136, 0.05);
+        border: 1px solid rgba(0, 255, 136, 0.2);
+        padding: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .visit-item:hover, .feedback-item:hover {
+        background: rgba(0, 255, 136, 0.1);
+        transform: translateX(5px);
+    }
+    
+    .item-project {
+        font-weight: 600;
+        color: var(--primary);
+        margin-bottom: 0.5rem;
+    }
+    
+    .item-timestamp {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 0.5rem;
+    }
+    
+    .item-content {
+        font-style: italic;
+        line-height: 1.6;
+    }
+    
+    .exquisite-corpse {
+        background: var(--primary);
+        color: var(--secondary);
+        padding: 2rem;
+        margin: 2rem 0;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .exquisite-corpse::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.3), transparent);
+        animation: shimmer 3s infinite;
+    }
+    
+    @keyframes shimmer {
+        0% { left: -100%; }
+        100% { left: 100%; }
+    }
+    
+    .corpse-title {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: var(--accent);
+    }
+    
+    .corpse-poem {
+        font-size: 1.1rem;
+        line-height: 1.8;
+        font-style: italic;
+    }
+    
+    .empty-state {
+        text-align: center;
+        color: var(--muted);
+        font-style: italic;
+        padding: 3rem;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: rgba(0, 255, 136, 0.05);
+        border: 1px solid rgba(0, 255, 136, 0.2);
+        padding: 1.5rem;
+        text-align: center;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 600;
+        color: var(--accent);
+        display: block;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="trace-container fade-in">
+    <div class="trace-header">
+        <h1 class="trace-title">YOUR TRACE</h1>
+        <p class="trace-subtitle">A record of your journey through machinic encounters</p>
+        <div class="visitor-id mono">
+            Visitor ID: <span id="visitorIdDisplay"></span>
+        </div>
+    </div>
+    
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+            <span class="stat-number" id="visitCount">0</span>
+            <span class="stat-label">Projects Visited</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number" id="thoughtCount">0</span>
+            <span class="stat-label">Thoughts Shared</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number" id="wordCount">0</span>
+            <span class="stat-label">Words Written</span>
+        </div>
+    </div>
+    
+    <div class="exquisite-corpse" id="exquisiteCorpse" style="display: none;">
+        <h3 class="corpse-title">Your Exquisite Corpse</h3>
+        <p class="corpse-poem" id="corpsePoem"></p>
+    </div>
+    
+    <div class="trace-section">
+        <h3>Project Visits</h3>
+        <div id="visitsList">
+            <div class="empty-state">No visits recorded yet</div>
+        </div>
+    </div>
+    
+    <div class="trace-section">
+        <h3>Thoughts & Reflections</h3>
+        <div id="feedbackList">
+            <div class="empty-state">No thoughts shared yet</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Display visitor ID
+    document.getElementById('visitorIdDisplay').textContent = visitorId;
+    
+    // Load trace data
+    loadTrace();
+    
+    function loadTrace() {
+        fetch(`/api/trace/${visitorId}`)
+            .then(response => response.json())
+            .then(data => {
+                renderVisits(data.visits);
+                renderFeedback(data.feedback);
+                updateStats(data);
+                generateExquisiteCorpse(data.feedback);
+            })
+            .catch(error => {
+                console.error('Error loading trace:', error);
+            });
+    }
+    
+    function renderVisits(visits) {
+        const container = document.getElementById('visitsList');
+        
+        if (visits.length === 0) {
+            container.innerHTML = '<div class="empty-state">No visits recorded yet</div>';
+            return;
+        }
+        
+        container.innerHTML = visits.map(visit => `
+            <div class="visit-item">
+                <div class="item-project">${getProjectTitle(visit.project)}</div>
+                <div class="item-timestamp">${formatTimestamp(visit.timestamp)}</div>
+            </div>
+        `).join('');
+    }
+    
+    function renderFeedback(feedback) {
+        const container = document.getElementById('feedbackList');
+        
+        if (feedback.length === 0) {
+            container.innerHTML = '<div class="empty-state">No thoughts shared yet</div>';
+            return;
+        }
+        
+        container.innerHTML = feedback.map(item => `
+            <div class="feedback-item">
+                <div class="item-project">${getProjectTitle(item.project)}</div>
+                <div class="item-timestamp">${formatTimestamp(item.timestamp)}</div>
+                <div class="item-content">"${item.content}"</div>
+            </div>
+        `).join('');
+    }
+    
+    function updateStats(data) {
+        const uniqueVisits = new Set(data.visits.map(v => v.project)).size;
+        const totalWords = data.feedback.reduce((sum, item) => 
+            sum + item.content.split(' ').length, 0);
+        
+        document.getElementById('visitCount').textContent = uniqueVisits;
+        document.getElementById('thoughtCount').textContent = data.feedback.length;
+        document.getElementById('wordCount').textContent = totalWords;
+    }
+    
+    function generateExquisiteCorpse(feedback) {
+        if (feedback.length < 2) return;
+        
+        // Extract interesting phrases and words
+        const words = [];
+        const phrases = [];
+        
+        feedback.forEach(item => {
+            const content = item.content.toLowerCase();
+            const contentWords = content.split(/\s+/).filter(w => w.length > 3);
+            words.push(...contentWords);
+            
+            // Extract phrases (sequences of 2-4 words)
+            for (let i = 0; i < contentWords.length - 1; i++) {
+                const phrase = contentWords.slice(i, i + Math.min(3, contentWords.length - i)).join(' ');
+                if (phrase.length > 8) phrases.push(phrase);
+            }
+        });
+        
+        // Create surreal combinations
+        const poem = [];
+        for (let i = 0; i < 4; i++) {
+            const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)] || 
+                                words[Math.floor(Math.random() * words.length)];
+            const randomWord = words[Math.floor(Math.random() * words.length)];
+            
+            poem.push(`${randomPhrase} ${randomWord}`);
+        }
+        
+        if (poem.length > 0) {
+            document.getElementById('corpsePoem').textContent = poem.join(' / ');
+            document.getElementById('exquisiteCorpse').style.display = 'block';
+        }
+    }
+    
+    function getProjectTitle(projectId) {
+        const titles = {
+            'catherine': 'The space between two things is a portal',
+            'george': 'Archive of Belonging',
+            'lydia': 'Florilegi/o',
+            'mike_kris': 'Templum: Emergence as divination',
+            'nata': 'The Feeling of Thought',
+            'poki': 'Big Brother',
+            'kamyar': 'Dreaming Impermanence'
+        };
+        return titles[projectId] || projectId;
+    }
+    
+    function formatTimestamp(timestamp) {
+        return new Date(timestamp).toLocaleString();
+    }
+</script>
+{% endblock %}
