@@ -6,6 +6,9 @@ import json
 from collections import Counter
 import re
 from datetime import datetime
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'machinic-encounters-secret'
@@ -170,6 +173,71 @@ def get_wordcloud():
                      if word not in stop_words and len(word) > 2}
     
     return jsonify(filtered_words)
+
+@app.route('/api/word_network')
+def get_word_network():
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute('SELECT content FROM feedback')
+    texts = [row[0] for row in c.fetchall()]
+    conn.close()
+    
+    if len(texts) < 2:
+        return jsonify({'nodes': [], 'links': []})
+    
+    # Create TF-IDF vectors
+    vectorizer = TfidfVectorizer(
+        max_features=50,
+        stop_words='english',
+        min_df=1,
+        ngram_range=(1, 2)
+    )
+    
+    try:
+        tfidf_matrix = vectorizer.fit_transform(texts)
+        feature_names = vectorizer.get_feature_names_out()
+        
+        # Calculate word co-occurrence and similarity
+        word_scores = tfidf_matrix.sum(axis=0).A1
+        word_freq = dict(zip(feature_names, word_scores))
+        
+        # Get top words
+        top_words = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[:20]
+        
+        # Calculate similarity between words based on their contexts
+        word_vectors = tfidf_matrix.T
+        similarity_matrix = cosine_similarity(word_vectors)
+        
+        nodes = []
+        links = []
+        
+        for i, (word, score) in enumerate(top_words):
+            nodes.append({
+                'id': word,
+                'frequency': float(score),
+                'size': 10 + score * 30
+            })
+        
+        # Create links based on similarity
+        for i, (word1, _) in enumerate(top_words):
+            for j, (word2, _) in enumerate(top_words):
+                if i < j:  # Avoid duplicate links
+                    word1_idx = list(feature_names).index(word1)
+                    word2_idx = list(feature_names).index(word2)
+                    similarity = similarity_matrix[word1_idx, word2_idx]
+                    
+                    if similarity > 0.1:  # Threshold for connection
+                        links.append({
+                            'source': word1,
+                            'target': word2,
+                            'strength': float(similarity)
+                        })
+        
+        return jsonify({'nodes': nodes, 'links': links})
+    
+    except Exception as e:
+        print(f"NLP Error: {e}")
+        return jsonify({'nodes': [], 'links': []})
 
 @app.route('/api/trace/<visitor_id>')
 def get_trace(visitor_id):

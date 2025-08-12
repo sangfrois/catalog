@@ -126,6 +126,21 @@
         transform-origin: left center;
         transition: opacity 0.5s ease;
     }
+    
+    .floating-word {
+        pointer-events: none;
+        will-change: transform, left;
+    }
+    
+    .network-node {
+        cursor: pointer;
+        will-change: transform;
+    }
+    
+    .network-link {
+        pointer-events: none;
+        will-change: opacity;
+    }
 </style>
 {% endblock %}
 
@@ -260,95 +275,121 @@
     
     function renderNetwork() {
         const container = document.getElementById('wordcloud');
-        const words = Object.entries(wordData).slice(0, 15); // Limit for performance
         
-        if (words.length === 0) return;
-        
-        const centerX = window.innerWidth / 2;
-        const centerY = window.innerHeight / 2;
-        const maxFreq = Math.max(...Object.values(wordData));
-        
-        // Create center node
-        const centerNode = document.createElement('div');
-        centerNode.className = 'word-node';
-        centerNode.textContent = 'COLLECTIVE';
-        centerNode.style.cssText = `
-            left: ${centerX - 50}px;
-            top: ${centerY - 15}px;
-            font-size: 32px;
-            color: var(--accent);
-            font-weight: bold;
-        `;
-        container.appendChild(centerNode);
-        
-        // Create word nodes in multiple rings
-        words.forEach(([word, freq], index) => {
-            const ring = Math.floor(index / 5) + 1; // Multiple rings
-            const angleOffset = ring * 0.3; // Offset each ring
-            const radius = Math.min(centerX, centerY) * (0.3 + ring * 0.2);
-            const angle = (index / 5) * 2 * Math.PI + angleOffset;
-            
-            const x = centerX + Math.cos(angle) * radius;
-            const y = centerY + Math.sin(angle) * radius;
-            
-            const wordEl = document.createElement('div');
-            wordEl.className = 'word-node';
-            wordEl.textContent = word;
-            wordEl.style.cssText = `
-                left: ${x - word.length * 4}px;
-                top: ${y - 10}px;
-                font-size: ${16 + (freq / maxFreq) * 24}px;
-                opacity: ${0.6 + (freq / maxFreq) * 0.4};
-            `;
-            
-            container.appendChild(wordEl);
-            
-            // Create connections to center and nearby nodes
-            const line = document.createElement('div');
-            line.className = 'connection-line';
-            const length = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
-            const lineAngle = Math.atan2(y - centerY, x - centerX);
-            
-            line.style.cssText = `
-                left: ${centerX}px;
-                top: ${centerY}px;
-                width: ${length}px;
-                transform: rotate(${lineAngle}rad);
-                opacity: ${0.2 + (freq / maxFreq) * 0.3};
-            `;
-            
-            container.appendChild(line);
-            
-            // Connect to nearby nodes
-            if (index > 0 && Math.random() < 0.4) {
-                const prevIndex = index - 1;
-                const prevRing = Math.floor(prevIndex / 5) + 1;
-                const prevAngleOffset = prevRing * 0.3;
-                const prevRadius = Math.min(centerX, centerY) * (0.3 + prevRing * 0.2);
-                const prevAngle = (prevIndex / 5) * 2 * Math.PI + prevAngleOffset;
+        // Fetch NLP-based network data
+        fetch('/api/word_network')
+            .then(response => response.json())
+            .then(networkData => {
+                if (networkData.nodes.length === 0) {
+                    container.innerHTML = '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--muted); font-size: 24px;">Collecting thoughts...</div>';
+                    return;
+                }
                 
-                const prevX = centerX + Math.cos(prevAngle) * prevRadius;
-                const prevY = centerY + Math.sin(prevAngle) * prevRadius;
+                const centerX = window.innerWidth / 2;
+                const centerY = window.innerHeight / 2;
+                const maxSize = Math.max(...networkData.nodes.map(n => n.size));
                 
-                const connectLine = document.createElement('div');
-                connectLine.className = 'connection-line';
-                const connectLength = Math.sqrt((x - prevX) ** 2 + (y - prevY) ** 2);
-                const connectAngle = Math.atan2(y - prevY, x - prevX);
+                // Position nodes in a force-directed layout simulation
+                const nodes = networkData.nodes.map((node, i) => {
+                    const angle = (i / networkData.nodes.length) * 2 * Math.PI;
+                    const radius = 150 + (node.size / maxSize) * 200;
+                    return {
+                        ...node,
+                        x: centerX + Math.cos(angle) * radius + (Math.random() - 0.5) * 100,
+                        y: centerY + Math.sin(angle) * radius + (Math.random() - 0.5) * 100
+                    };
+                });
                 
-                connectLine.style.cssText = `
-                    left: ${prevX}px;
-                    top: ${prevY}px;
-                    width: ${connectLength}px;
-                    transform: rotate(${connectAngle}rad);
-                    opacity: 0.1;
-                    background: rgba(0, 255, 136, 0.3);
-                `;
+                // Create nodes
+                nodes.forEach(node => {
+                    const nodeEl = document.createElement('div');
+                    nodeEl.className = 'word-node network-node';
+                    nodeEl.textContent = node.id;
+                    nodeEl.style.cssText = `
+                        left: ${node.x - node.id.length * 4}px;
+                        top: ${node.y - 10}px;
+                        font-size: ${node.size}px;
+                        opacity: ${0.7 + (node.frequency * 0.3)};
+                        color: ${node.frequency > 0.5 ? 'var(--accent)' : 'var(--secondary)'};
+                        font-weight: ${node.frequency > 0.3 ? 'bold' : 'normal'};
+                        text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+                        transition: all 0.3s ease;
+                    `;
+                    
+                    nodeEl.addEventListener('mouseenter', () => {
+                        nodeEl.style.transform = 'scale(1.3)';
+                        nodeEl.style.color = 'var(--accent)';
+                        // Highlight connected links
+                        container.querySelectorAll('.network-link').forEach(link => {
+                            if (link.dataset.source === node.id || link.dataset.target === node.id) {
+                                link.style.opacity = '0.8';
+                                link.style.background = 'var(--accent)';
+                            }
+                        });
+                    });
+                    
+                    nodeEl.addEventListener('mouseleave', () => {
+                        nodeEl.style.transform = 'scale(1)';
+                        nodeEl.style.color = node.frequency > 0.5 ? 'var(--accent)' : 'var(--secondary)';
+                        container.querySelectorAll('.network-link').forEach(link => {
+                            link.style.opacity = link.dataset.strength;
+                            link.style.background = 'rgba(0, 255, 136, 0.2)';
+                        });
+                    });
+                    
+                    container.appendChild(nodeEl);
+                });
                 
-                container.appendChild(connectLine);
-            }
-        });
-        
-        document.getElementById('connectionCount').textContent = container.querySelectorAll('.connection-line').length;
+                // Create links
+                networkData.links.forEach(link => {
+                    const sourceNode = nodes.find(n => n.id === link.source);
+                    const targetNode = nodes.find(n => n.id === link.target);
+                    
+                    if (sourceNode && targetNode) {
+                        const linkEl = document.createElement('div');
+                        linkEl.className = 'connection-line network-link';
+                        linkEl.dataset.source = link.source;
+                        linkEl.dataset.target = link.target;
+                        linkEl.dataset.strength = link.strength;
+                        
+                        const dx = targetNode.x - sourceNode.x;
+                        const dy = targetNode.y - sourceNode.y;
+                        const length = Math.sqrt(dx * dx + dy * dy);
+                        const angle = Math.atan2(dy, dx);
+                        
+                        linkEl.style.cssText = `
+                            left: ${sourceNode.x}px;
+                            top: ${sourceNode.y}px;
+                            width: ${length}px;
+                            height: ${2 + link.strength * 3}px;
+                            transform: rotate(${angle}rad);
+                            opacity: ${link.strength};
+                            background: rgba(0, 255, 136, 0.2);
+                            transition: all 0.3s ease;
+                        `;
+                        
+                        container.appendChild(linkEl);
+                    }
+                });
+                
+                document.getElementById('connectionCount').textContent = networkData.links.length;
+                
+                // Add pulsing animation to the network
+                setInterval(() => {
+                    const links = container.querySelectorAll('.network-link');
+                    links.forEach(link => {
+                        const currentOpacity = parseFloat(link.style.opacity);
+                        link.style.opacity = currentOpacity * (0.8 + Math.random() * 0.4);
+                        setTimeout(() => {
+                            link.style.opacity = currentOpacity;
+                        }, 500);
+                    });
+                }, 3000);
+            })
+            .catch(error => {
+                console.error('Network error:', error);
+                container.innerHTML = '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--muted); font-size: 18px;">Network visualization loading...</div>';
+            });
     }
     
     function renderFlow() {
@@ -356,39 +397,49 @@
         const words = Object.entries(wordData);
         const maxFreq = Math.max(...Object.values(wordData));
         
-        words.forEach(([word, freq], index) => {
+        // Create persistent floating words that cycle through
+        const createFloatingWord = (word, freq, delay) => {
             setTimeout(() => {
                 const wordEl = document.createElement('div');
-                wordEl.className = 'word-node';
+                wordEl.className = 'word-node floating-word';
                 wordEl.textContent = word;
                 
-                const startX = Math.random() * window.innerWidth;
-                const endX = Math.random() * window.innerWidth;
-                const duration = 8000 + Math.random() * 4000;
-                const size = 24 + (freq / maxFreq) * 48; // Much bigger words
+                const startX = -100;
+                const endX = window.innerWidth + 100;
+                const y = 100 + Math.random() * (window.innerHeight - 200);
+                const duration = 15000 + Math.random() * 10000; // Much slower
+                const size = 32 + (freq / maxFreq) * 64; // Bigger words
                 
                 wordEl.style.cssText = `
                     left: ${startX}px;
-                    top: ${window.innerHeight + 50}px;
+                    top: ${y}px;
                     font-size: ${size}px;
-                    transition: all ${duration}ms ease-out;
-                    opacity: ${0.7 + (freq / maxFreq) * 0.3};
-                    font-weight: ${freq > maxFreq * 0.5 ? 'bold' : 'normal'};
+                    transition: all ${duration}ms linear;
+                    opacity: ${0.8 + (freq / maxFreq) * 0.2};
+                    font-weight: ${freq > maxFreq * 0.3 ? 'bold' : 'normal'};
+                    text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+                    z-index: ${Math.floor(freq * 10)};
                 `;
                 
                 container.appendChild(wordEl);
                 
+                // Start movement
                 setTimeout(() => {
                     wordEl.style.left = endX + 'px';
-                    wordEl.style.top = '-100px';
-                    wordEl.style.opacity = '0';
-                    wordEl.style.transform = `rotate(${Math.random() * 20 - 10}deg) scale(0.8)`;
+                    wordEl.style.transform = `rotate(${Math.random() * 10 - 5}deg)`;
                 }, 100);
                 
+                // Remove and recreate for continuous flow
                 setTimeout(() => {
                     wordEl.remove();
+                    createFloatingWord(word, freq, 0); // Recreate immediately
                 }, duration + 100);
-            }, index * 300); // Faster spawn rate
+            }, delay);
+        };
+        
+        // Start continuous flow for each word
+        words.forEach(([word, freq], index) => {
+            createFloatingWord(word, freq, index * 1000);
         });
     }
     
