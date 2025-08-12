@@ -25,6 +25,16 @@
         font-size: 1.1rem;
     }
     
+    .trace-explanation {
+        background: rgba(0, 255, 136, 0.05);
+        border: 1px solid rgba(0, 255, 136, 0.2);
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        color: var(--muted);
+    }
+    
     .visitor-id {
         background: var(--bg);
         border: 1px solid var(--muted);
@@ -158,6 +168,9 @@
     <div class="trace-header">
         <h1 class="trace-title">YOUR TRACE</h1>
         <p class="trace-subtitle">A record of your journey through machinic encounters</p>
+        <div class="trace-explanation">
+            <p>This page tracks your unique path through the exhibition. Each project you visit and every thought you share contributes to both your personal trace and the collective mind.</p>
+        </div>
         <div class="visitor-id mono">
             Visitor ID: <span id="visitorIdDisplay"></span>
         </div>

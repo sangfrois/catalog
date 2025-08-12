@@ -102,6 +102,27 @@
         animation: fadeIn 1s ease-in 1s forwards;
     }
     
+    .intro-instructions {
+        margin: 2rem 0;
+        opacity: 0;
+        animation: fadeIn 1s ease-in 1.5s forwards;
+    }
+    
+    .instruction-text {
+        font-size: 1rem;
+        color: var(--accent);
+        margin-bottom: 0.5rem !important;
+        font-family: 'JetBrains Mono', monospace;
+        letter-spacing: 1px;
+    }
+    
+    .instruction-subtext {
+        font-size: 0.9rem;
+        color: var(--muted);
+        font-style: italic;
+        margin-bottom: 0 !important;
+    }
+    
     .enter-btn {
         background: none;
         border: 2px solid var(--accent);
@@ -134,6 +155,108 @@
         0% { transform: translateY(100vh) rotate(0deg); }
         100% { transform: translateY(-100px) rotate(360deg); }
     }
+    
+    .guide-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1500;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.5s ease;
+    }
+    
+    .guide-overlay.show {
+        opacity: 1;
+        pointer-events: all;
+    }
+    
+    .guide-content {
+        background: var(--secondary);
+        padding: 3rem;
+        border-radius: 8px;
+        max-width: 500px;
+        text-align: center;
+        border: 2px solid var(--accent);
+    }
+    
+    .guide-content h3 {
+        color: var(--accent);
+        margin-bottom: 2rem;
+        font-size: 1.5rem;
+    }
+    
+    .guide-steps {
+        text-align: left;
+        margin-bottom: 2rem;
+    }
+    
+    .guide-step {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+        gap: 1rem;
+    }
+    
+    .step-number {
+        background: var(--accent);
+        color: var(--primary);
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+        flex-shrink: 0;
+    }
+    
+    .guide-step p {
+        margin: 0;
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+    
+    .guide-close {
+        background: var(--accent);
+        color: var(--primary);
+        border: none;
+        padding: 12px 24px;
+        font-size: 1rem;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+    }
+    
+    .guide-close:hover {
+        transform: translate(-2px, -2px);
+        box-shadow: 2px 2px 0 var(--primary);
+    }
+    
+    .space-label {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        color: var(--muted);
+        opacity: 0.7;
+    }
+    
+    .preview-hint {
+        margin-top: 1rem;
+        font-size: 0.8rem;
+        color: var(--accent);
+        font-family: 'JetBrains Mono', monospace;
+        opacity: 0.8;
+    }
 </style>
 {% endblock %}
 
@@ -142,12 +265,42 @@
     <div class="intro-text">
         <h1 class="glitch">MACHINIC<br>ENCOUNTERS</h1>
         <p>An exhibition exploring the thresholds of human-machine encounters</p>
+        <div class="intro-instructions">
+            <p class="instruction-text">Navigate the space • Discover projects • Share your thoughts</p>
+            <p class="instruction-subtext">Your reflections become part of the collective mind</p>
+        </div>
         <button class="enter-btn" onclick="enterExhibition()">ENTER</button>
     </div>
 </div>
 
 <div class="map-container">
+    <div class="guide-overlay" id="guideOverlay">
+        <div class="guide-content">
+            <h3>How to Navigate</h3>
+            <div class="guide-steps">
+                <div class="guide-step">
+                    <span class="step-number">1</span>
+                    <p>Hover over numbered circles to preview projects</p>
+                </div>
+                <div class="guide-step">
+                    <span class="step-number">2</span>
+                    <p>Click to visit a project and leave your thoughts</p>
+                </div>
+                <div class="guide-step">
+                    <span class="step-number">3</span>
+                    <p>Check the Dashboard to see collective reflections</p>
+                </div>
+                <div class="guide-step">
+                    <span class="step-number">4</span>
+                    <p>Visit Trace to see your personal journey</p>
+                </div>
+            </div>
+            <button class="guide-close" onclick="closeGuide()">Begin Exploration</button>
+        </div>
+    </div>
+    
     <div class="floorplan" id="floorplan">
+        <div class="space-label">Studio Hydro-Québec</div>
         {% for project_id, project in projects.items() %}
         <div class="project-hotspot" 
              style="left: {{ project.position.x }}%; top: {{ project.position.y }}%;"
@@ -165,6 +318,7 @@
         <p class="mono muted" id="previewArtist"></p>
         <p id="previewDesc"></p>
         <p class="mono accent" id="previewVibe"></p>
+        <div class="preview-hint">Click to explore →</div>
     </div>
 </div>
 
@@ -182,8 +336,16 @@
     
     function enterExhibition() {
         document.getElementById('introOverlay').classList.add('hidden');
+        // Show guide after intro
+        setTimeout(() => {
+            document.getElementById('guideOverlay').classList.add('show');
+        }, 500);
         // Start floating fragments
         createFloatingFragments();
+    }
+    
+    function closeGuide() {
+        document.getElementById('guideOverlay').classList.remove('show');
     }
     
     function createFloatingFragments() {

@@ -63,6 +63,47 @@
         padding-top: 2rem;
     }
     
+    .feedback-prompts {
+        background: rgba(0, 255, 136, 0.05);
+        border-left: 3px solid var(--accent);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .prompt-intro {
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: var(--primary);
+    }
+    
+    .prompt-list {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .prompt-list li {
+        margin-bottom: 0.5rem;
+        padding-left: 1rem;
+        position: relative;
+        font-size: 0.9rem;
+        color: var(--muted);
+    }
+    
+    .prompt-list li::before {
+        content: '→';
+        position: absolute;
+        left: 0;
+        color: var(--accent);
+    }
+    
+    .char-counter {
+        text-align: right;
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin-top: 0.5rem;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
     .feedback-form {
         margin-bottom: 2rem;
     }
@@ -152,16 +193,27 @@
     
     <div class="feedback-section">
         <h3>Leave a thought</h3>
-        <p class="muted">What does this work make you feel? What questions does it raise?</p>
+        <div class="feedback-prompts">
+            <p class="prompt-intro">Your reflections become part of the collective mind. Consider:</p>
+            <ul class="prompt-list">
+                <li>What does this work make you feel?</li>
+                <li>How does it challenge your understanding of machines?</li>
+                <li>What questions does it raise about human-AI relationships?</li>
+                <li>What memories or associations does it evoke?</li>
+            </ul>
+        </div>
         
         <form class="feedback-form" onsubmit="submitThought(event)">
             <textarea 
                 class="feedback-input" 
-                placeholder="Your thoughts drift here..."
+                placeholder="Your thoughts drift here... (Your words will join the live visualization on the dashboard)"
                 id="thoughtInput"
                 maxlength="500"></textarea>
+            <div class="char-counter">
+                <span id="charCount">0</span>/500 characters
+            </div>
             <button type="submit" class="submit-btn" id="submitBtn">Submit Thought</button>
-            <p class="feedback-success mono" id="successMessage">Thought captured ✓</p>
+            <p class="feedback-success mono" id="successMessage">Thought captured ✓ Check the Dashboard to see it live</p>
         </form>
     </div>
     
@@ -175,6 +227,18 @@
     
     // Track visit on page load
     trackVisit(projectId);
+    
+    // Character counter
+    document.getElementById('thoughtInput').addEventListener('input', function() {
+        const count = this.value.length;
+        document.getElementById('charCount').textContent = count;
+        
+        if (count > 450) {
+            document.getElementById('charCount').style.color = 'var(--accent)';
+        } else {
+            document.getElementById('charCount').style.color = 'var(--muted)';
+        }
+    });
     
     function submitThought(event) {
         event.preventDefault();
@@ -194,6 +258,7 @@
             .then(data => {
                 if (data.status === 'ok') {
                     input.value = '';
+                    document.getElementById('charCount').textContent = '0';
                     success.classList.add('show');
                     
                     // Animate text particles
@@ -201,7 +266,7 @@
                     
                     setTimeout(() => {
                         success.classList.remove('show');
-                    }, 3000);
+                    }, 5000);
                 }
             })
             .finally(() => {
