@@ -260,16 +260,34 @@
     
     function renderNetwork() {
         const container = document.getElementById('wordcloud');
-        const words = Object.entries(wordData).slice(0, 20); // Limit for performance
+        const words = Object.entries(wordData).slice(0, 15); // Limit for performance
         
         if (words.length === 0) return;
         
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;
-        const radius = Math.min(centerX, centerY) * 0.6;
+        const maxFreq = Math.max(...Object.values(wordData));
         
+        // Create center node
+        const centerNode = document.createElement('div');
+        centerNode.className = 'word-node';
+        centerNode.textContent = 'COLLECTIVE';
+        centerNode.style.cssText = `
+            left: ${centerX - 50}px;
+            top: ${centerY - 15}px;
+            font-size: 32px;
+            color: var(--accent);
+            font-weight: bold;
+        `;
+        container.appendChild(centerNode);
+        
+        // Create word nodes in multiple rings
         words.forEach(([word, freq], index) => {
-            const angle = (index / words.length) * 2 * Math.PI;
+            const ring = Math.floor(index / 5) + 1; // Multiple rings
+            const angleOffset = ring * 0.3; // Offset each ring
+            const radius = Math.min(centerX, centerY) * (0.3 + ring * 0.2);
+            const angle = (index / 5) * 2 * Math.PI + angleOffset;
+            
             const x = centerX + Math.cos(angle) * radius;
             const y = centerY + Math.sin(angle) * radius;
             
@@ -277,28 +295,56 @@
             wordEl.className = 'word-node';
             wordEl.textContent = word;
             wordEl.style.cssText = `
-                left: ${x}px;
-                top: ${y}px;
-                font-size: ${12 + freq * 2}px;
+                left: ${x - word.length * 4}px;
+                top: ${y - 10}px;
+                font-size: ${16 + (freq / maxFreq) * 24}px;
+                opacity: ${0.6 + (freq / maxFreq) * 0.4};
             `;
             
             container.appendChild(wordEl);
             
-            // Create connections to center
-            if (Math.random() < 0.3) {
-                const line = document.createElement('div');
-                line.className = 'connection-line';
-                const length = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
-                const angle = Math.atan2(y - centerY, x - centerX);
+            // Create connections to center and nearby nodes
+            const line = document.createElement('div');
+            line.className = 'connection-line';
+            const length = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+            const lineAngle = Math.atan2(y - centerY, x - centerX);
+            
+            line.style.cssText = `
+                left: ${centerX}px;
+                top: ${centerY}px;
+                width: ${length}px;
+                transform: rotate(${lineAngle}rad);
+                opacity: ${0.2 + (freq / maxFreq) * 0.3};
+            `;
+            
+            container.appendChild(line);
+            
+            // Connect to nearby nodes
+            if (index > 0 && Math.random() < 0.4) {
+                const prevIndex = index - 1;
+                const prevRing = Math.floor(prevIndex / 5) + 1;
+                const prevAngleOffset = prevRing * 0.3;
+                const prevRadius = Math.min(centerX, centerY) * (0.3 + prevRing * 0.2);
+                const prevAngle = (prevIndex / 5) * 2 * Math.PI + prevAngleOffset;
                 
-                line.style.cssText = `
-                    left: ${centerX}px;
-                    top: ${centerY}px;
-                    width: ${length}px;
-                    transform: rotate(${angle}rad);
+                const prevX = centerX + Math.cos(prevAngle) * prevRadius;
+                const prevY = centerY + Math.sin(prevAngle) * prevRadius;
+                
+                const connectLine = document.createElement('div');
+                connectLine.className = 'connection-line';
+                const connectLength = Math.sqrt((x - prevX) ** 2 + (y - prevY) ** 2);
+                const connectAngle = Math.atan2(y - prevY, x - prevX);
+                
+                connectLine.style.cssText = `
+                    left: ${prevX}px;
+                    top: ${prevY}px;
+                    width: ${connectLength}px;
+                    transform: rotate(${connectAngle}rad);
+                    opacity: 0.1;
+                    background: rgba(0, 255, 136, 0.3);
                 `;
                 
-                container.appendChild(line);
+                container.appendChild(connectLine);
             }
         });
         
@@ -308,6 +354,7 @@
     function renderFlow() {
         const container = document.getElementById('wordcloud');
         const words = Object.entries(wordData);
+        const maxFreq = Math.max(...Object.values(wordData));
         
         words.forEach(([word, freq], index) => {
             setTimeout(() => {
@@ -317,61 +364,77 @@
                 
                 const startX = Math.random() * window.innerWidth;
                 const endX = Math.random() * window.innerWidth;
-                const duration = 5000 + Math.random() * 5000;
+                const duration = 8000 + Math.random() * 4000;
+                const size = 24 + (freq / maxFreq) * 48; // Much bigger words
                 
                 wordEl.style.cssText = `
                     left: ${startX}px;
                     top: ${window.innerHeight + 50}px;
-                    font-size: ${12 + freq * 2}px;
-                    transition: all ${duration}ms linear;
+                    font-size: ${size}px;
+                    transition: all ${duration}ms ease-out;
+                    opacity: ${0.7 + (freq / maxFreq) * 0.3};
+                    font-weight: ${freq > maxFreq * 0.5 ? 'bold' : 'normal'};
                 `;
                 
                 container.appendChild(wordEl);
                 
                 setTimeout(() => {
                     wordEl.style.left = endX + 'px';
-                    wordEl.style.top = '-50px';
+                    wordEl.style.top = '-100px';
                     wordEl.style.opacity = '0';
+                    wordEl.style.transform = `rotate(${Math.random() * 20 - 10}deg) scale(0.8)`;
                 }, 100);
                 
                 setTimeout(() => {
                     wordEl.remove();
                 }, duration + 100);
-            }, index * 500);
+            }, index * 300); // Faster spawn rate
         });
     }
     
     function addNewWords(content) {
-        if (currentMode !== 'flow') return;
-        
-        const words = content.split(' ').slice(0, 3);
+        const words = content.split(' ').slice(0, 5);
         const container = document.getElementById('wordcloud');
         
-        words.forEach((word, index) => {
-            setTimeout(() => {
-                const wordEl = document.createElement('div');
-                wordEl.className = 'word-node';
-                wordEl.textContent = word;
-                wordEl.style.cssText = `
-                    left: ${Math.random() * window.innerWidth}px;
-                    top: ${window.innerHeight}px;
-                    font-size: 24px;
-                    color: var(--accent);
-                    transition: all 3s ease-out;
-                `;
-                
-                container.appendChild(wordEl);
-                
+        if (currentMode === 'flow') {
+            words.forEach((word, index) => {
                 setTimeout(() => {
-                    wordEl.style.top = '-50px';
-                    wordEl.style.opacity = '0';
-                }, 100);
-                
+                    const wordEl = document.createElement('div');
+                    wordEl.className = 'word-node';
+                    wordEl.textContent = word;
+                    wordEl.style.cssText = `
+                        left: ${Math.random() * window.innerWidth}px;
+                        top: ${window.innerHeight}px;
+                        font-size: 36px;
+                        color: var(--accent);
+                        transition: all 4s ease-out;
+                        font-weight: bold;
+                        text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+                    `;
+                    
+                    container.appendChild(wordEl);
+                    
+                    setTimeout(() => {
+                        wordEl.style.top = '-100px';
+                        wordEl.style.opacity = '0';
+                        wordEl.style.transform = `rotate(${Math.random() * 30 - 15}deg)`;
+                    }, 100);
+                    
+                    setTimeout(() => {
+                        wordEl.remove();
+                    }, 4100);
+                }, index * 200);
+            });
+        } else if (currentMode === 'network') {
+            // Add pulsing effect to existing network
+            const existingWords = container.querySelectorAll('.word-node');
+            existingWords.forEach(wordEl => {
+                wordEl.style.animation = 'pulse 1s ease-in-out';
                 setTimeout(() => {
-                    wordEl.remove();
-                }, 3100);
-            }, index * 300);
-        });
+                    wordEl.style.animation = '';
+                }, 1000);
+            });
+        }
     }
 </script>
 {% endblock %}
