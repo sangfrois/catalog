@@ -61,19 +61,27 @@
             right: 20px;
             z-index: 2000;
             display: flex;
-            gap: 15px;
+            gap: 10px;
+            background: rgba(250, 250, 250, 0.95);
+            padding: 10px;
+            border-radius: 4px;
+            backdrop-filter: blur(10px);
         }
         
         .nav a {
             color: var(--primary);
             text-decoration: none;
-            padding: 8px 16px;
+            padding: 10px 16px;
             border: 1px solid var(--primary);
             transition: all 0.3s ease;
             font-size: 14px;
+            background: var(--secondary);
+            border-radius: 2px;
+            min-width: 60px;
+            text-align: center;
         }
         
-        .nav a:hover {
+        .nav a:hover, .nav a.active {
             background: var(--accent);
             color: var(--primary);
             transform: translate(-2px, -2px);
@@ -103,9 +111,9 @@
 </head>
 <body>
     <nav class="nav">
-        <a href="/">Map</a>
-        <a href="/dashboard">Dashboard</a>
-        <a href="/trace">Trace</a>
+        <a href="/" id="nav-map">Map</a>
+        <a href="/dashboard" id="nav-dashboard">Dashboard</a>
+        <a href="/trace" id="nav-trace">Trace</a>
     </nav>
     
     <main>
@@ -123,6 +131,23 @@
         
         // Initialize socket
         const socket = io();
+        
+        // Set active nav item
+        function setActiveNav() {
+            const path = window.location.pathname;
+            document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
+            
+            if (path === '/') {
+                document.getElementById('nav-map').classList.add('active');
+            } else if (path === '/dashboard') {
+                document.getElementById('nav-dashboard').classList.add('active');
+            } else if (path === '/trace') {
+                document.getElementById('nav-trace').classList.add('active');
+            }
+        }
+        
+        // Set active nav on page load
+        document.addEventListener('DOMContentLoaded', setActiveNav);
         
         // Utility functions
         function trackVisit(projectId) {

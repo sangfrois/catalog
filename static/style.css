@@ -47,12 +47,17 @@
     .nav {
         top: 10px;
         right: 10px;
-        gap: 8px;
+        left: 10px;
+        gap: 5px;
+        padding: 8px;
+        justify-content: center;
     }
     
     .nav a {
-        padding: 6px 12px;
+        padding: 8px 12px;
         font-size: 12px;
+        min-width: 50px;
+        flex: 1;
     }
     
     .project-hotspot {
@@ -81,8 +86,31 @@
     }
     
     .mode-btn {
-        padding: 6px 12px;
+        padding: 6px 10px;
         font-size: 10px;
+    }
+    
+    .mode-toggle {
+        top: 60px;
+        right: 10px;
+        left: 10px;
+        justify-content: center;
+        gap: 5px;
+    }
+    
+    .dashboard-header {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        text-align: center;
+    }
+    
+    .dashboard-title {
+        font-size: 1.2rem;
+    }
+    
+    .dashboard-subtitle {
+        font-size: 0.8rem;
     }
 }
 
