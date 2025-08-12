@@ -178,7 +178,7 @@
 
 {% block scripts %}
 <script>
-    const projects = {{ projects | tojsonfilter }};
+    const projects = {{ projects | tojson }};
     
     function enterExhibition() {
         document.getElementById('introOverlay').classList.add('hidden');
