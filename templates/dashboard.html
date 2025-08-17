@@ -154,6 +154,68 @@
         pointer-events: none;
         will-change: opacity;
     }
+
+    @media (max-width: 768px) {
+        .dashboard-container {
+            height: auto;
+            min-height: 100vh;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+
+        .dashboard-header {
+            position: relative;
+            top: auto;
+            left: auto;
+            padding: 20px 20px 0 20px;
+            text-align: center;
+        }
+
+        .dashboard-title {
+            font-size: 1.8rem;
+        }
+
+        .dashboard-subtitle {
+            font-size: 0.9rem;
+        }
+
+        .live-indicator {
+            position: relative;
+            top: auto;
+            left: auto;
+            justify-content: center;
+            padding-top: 10px;
+        }
+
+        .mode-toggle {
+            position: relative;
+            top: auto;
+            right: auto;
+            justify-content: center;
+            margin: 20px auto 0 auto;
+            width: 100%;
+            background: none;
+            padding: 0;
+            gap: 5px;
+        }
+        
+        .mode-btn {
+            padding: 8px 14px;
+            font-size: 12px;
+        }
+
+        .viz-container {
+            height: 50vh; /* Set a viewport-relative height for the viz area */
+        }
+
+        .stats-overlay {
+            position: relative;
+            text-align: center;
+            width: 100%;
+            left: auto;
+            bottom: auto;
+            padding: 15px 0;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -308,18 +370,24 @@
                     return;
                 }
                 
-                const centerX = window.innerWidth / 2;
-                const centerY = window.innerHeight / 2;
+                const isMobile = window.innerWidth <= 768;
+                const vizContainer = document.getElementById('wordcloud');
+                const centerX = vizContainer.clientWidth / 2;
+                const centerY = vizContainer.clientHeight / 2;
                 const maxSize = Math.max(...networkData.nodes.map(n => n.size));
                 
                 // Position nodes in a force-directed layout simulation
                 const nodes = networkData.nodes.map((node, i) => {
                     const angle = (i / networkData.nodes.length) * 2 * Math.PI;
-                    const radius = 150 + (node.size / maxSize) * 200;
+                    const baseRadius = isMobile ? 40 : 150;
+                    const radiusMultiplier = isMobile ? (vizContainer.clientWidth * 0.2) : 200;
+                    const randomOffset = isMobile ? 20 : 100;
+                    const radius = baseRadius + (node.size / maxSize) * radiusMultiplier;
+                    
                     return {
                         ...node,
-                        x: centerX + Math.cos(angle) * radius + (Math.random() - 0.5) * 100,
-                        y: centerY + Math.sin(angle) * radius + (Math.random() - 0.5) * 100
+                        x: centerX + Math.cos(angle) * radius + (Math.random() - 0.5) * randomOffset,
+                        y: centerY + Math.sin(angle) * radius + (Math.random() - 0.5) * randomOffset
                     };
                 });
                 
