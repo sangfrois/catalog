@@ -168,9 +168,17 @@ def visit():
     if project:
         conn = sqlite3.connect(db_path)
         c = conn.cursor()
-        c.execute('INSERT INTO visits (project, visitor_id) VALUES (?, ?)', 
+        
+        # Check if this visit already exists (prevent duplicates)
+        c.execute('SELECT COUNT(*) FROM visits WHERE project = ? AND visitor_id = ? AND datetime(timestamp) > datetime("now", "-1 minute")', 
                  (project, visitor_id))
-        conn.commit()
+        recent_visit = c.fetchone()[0]
+        
+        if recent_visit == 0:
+            c.execute('INSERT INTO visits (project, visitor_id) VALUES (?, ?)', 
+                     (project, visitor_id))
+            conn.commit()
+        
         conn.close()
         return jsonify({"status": "ok"})
     return jsonify({"status": "error"}), 400

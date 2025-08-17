@@ -436,6 +436,8 @@
     
     function enterExhibition() {
         document.getElementById('introOverlay').classList.add('hidden');
+        // Mark as seen
+        localStorage.setItem('machinc_encounters_seen', 'true');
         // Show guide after intro
         setTimeout(() => {
             document.getElementById('guideOverlay').classList.add('show');
@@ -443,6 +445,14 @@
         // Start floating fragments
         createFloatingFragments();
     }
+    
+    // Check if user has seen intro before
+    window.addEventListener('DOMContentLoaded', function() {
+        if (localStorage.getItem('machinc_encounters_seen') === 'true') {
+            document.getElementById('introOverlay').classList.add('hidden');
+            createFloatingFragments();
+        }
+    });
     
     function closeGuide() {
         document.getElementById('guideOverlay').classList.remove('show');
