@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, emit
 import sqlite3
 import os
@@ -253,10 +253,6 @@ def get_word_network():
             })
 
     return jsonify({'nodes': nodes, 'links': links})
-
-@app.route('/img/<path:filename>')
-def serve_img(filename):
-    return send_from_directory('img', filename)
 
 @app.route('/api/trace/<visitor_id>')
 def get_trace(visitor_id):

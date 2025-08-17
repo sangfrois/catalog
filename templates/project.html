@@ -203,7 +203,7 @@
     
     <div class="project-content">
         <div class="project-thumb">
-            <img src="{{ url_for('serve_img', filename=project.thumb) }}" alt="{{ project.title }}">
+            <img src="{{ url_for('static', filename='img/' + project.thumb) }}" alt="{{ project.title }}">
         </div>
         
         <p class="project-desc">{{ project.desc }}</p>
