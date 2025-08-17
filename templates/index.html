@@ -274,6 +274,18 @@
         letter-spacing: 1px;
     }
 
+    .plan-title {
+        position: absolute;
+        top: 15%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-family: 'Times New Roman', serif;
+        font-size: 2.5rem;
+        color: var(--primary);
+        font-weight: normal;
+        z-index: 5;
+    }
+
     .project-list {
         position: absolute;
         bottom: 20px;
@@ -315,6 +327,16 @@
     }
 
     @media (max-width: 768px) {
+        .plan-title {
+            position: relative;
+            top: auto;
+            left: auto;
+            transform: none;
+            text-align: center;
+            margin-top: 12vh;
+            margin-bottom: 1rem;
+            font-size: 2rem;
+        }
         .map-container {
             height: auto;
             overflow: visible;
@@ -324,7 +346,7 @@
             top: 0;
             left: 50%;
             transform: translateX(-50%);
-            margin-top: 12vh;
+            margin-top: 2rem;
             margin-bottom: 5vh;
             width: 90vw;
             height: 70vw;
@@ -420,6 +442,7 @@
 </div>
 
 <div class="map-container">
+    <h2 class="plan-title">Exhibition Plan</h2>
     <div class="guide-overlay" id="guideOverlay">
         <div class="guide-content">
             <h3>How to Navigate</h3>
