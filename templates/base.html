@@ -106,10 +106,100 @@
         .muted {
             color: var(--muted);
         }
+
+        .nav-toggle {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2001;
+            background: transparent;
+            border: 1px solid var(--primary);
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 8px;
+            width: 44px;
+            height: 44px;
+        }
+
+        .hamburger-box {
+            width: 28px;
+            height: 24px;
+            display: inline-block;
+            position: relative;
+        }
+
+        .hamburger-inner {
+            display: block;
+            top: 50%;
+            margin-top: -1px;
+            width: 28px;
+            height: 2px;
+            background-color: var(--primary);
+            border-radius: 4px;
+            position: absolute;
+            transition: transform 0.22s ease-in-out;
+        }
+
+        .hamburger-inner::before,
+        .hamburger-inner::after {
+            content: '';
+            display: block;
+            width: 100%;
+            height: 2px;
+            background-color: var(--primary);
+            border-radius: 4px;
+            position: absolute;
+            transition: transform 0.22s ease-in-out, top 0.1s ease-out, bottom 0.1s ease-out;
+        }
+
+        .hamburger-inner::before { top: -8px; }
+        .hamburger-inner::after { bottom: -8px; }
+
+        .nav-open .hamburger-inner {
+            transform: rotate(225deg);
+        }
+        .nav-open .hamburger-inner::before {
+            top: 0;
+            transform: rotate(-90deg);
+        }
+        .nav-open .hamburger-inner::after {
+            bottom: 0;
+            transform: rotate(-90deg);
+        }
+
+        @media (max-width: 768px) {
+            .nav-toggle {
+                display: block;
+            }
+            .nav {
+                position: fixed;
+                top: 0;
+                right: 0;
+                height: 100vh;
+                width: min(75vw, 300px);
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 2rem;
+                background: rgba(250, 250, 250, 0.98);
+                transform: translateX(100%);
+                transition: transform 0.3s ease-in-out;
+                padding: 0;
+            }
+            .nav.nav-open {
+                transform: translateX(0);
+            }
+        }
     </style>
     {% block head %}{% endblock %}
 </head>
 <body>
+    <button class="nav-toggle" aria-label="toggle navigation">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
     <nav class="nav">
         <a href="/" id="nav-map">Map</a>
         <a href="/dashboard" id="nav-dashboard">Dashboard</a>
@@ -147,7 +237,17 @@
         }
         
         // Set active nav on page load
-        document.addEventListener('DOMContentLoaded', setActiveNav);
+        document.addEventListener('DOMContentLoaded', () => {
+            setActiveNav();
+
+            const navToggle = document.querySelector('.nav-toggle');
+            const nav = document.querySelector('.nav');
+
+            navToggle.addEventListener('click', () => {
+                nav.classList.toggle('nav-open');
+                navToggle.classList.toggle('nav-open');
+            });
+        });
         
         // Utility functions
         function trackVisit(projectId) {
