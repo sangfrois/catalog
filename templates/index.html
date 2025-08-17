@@ -322,7 +322,7 @@
             top: 0;
             left: 50%;
             transform: translateX(-50%);
-            margin-top: 5vh;
+            margin-top: 12vh;
             margin-bottom: 5vh;
             width: 90vw;
             height: 70vw;
@@ -413,7 +413,7 @@
         <h3>Projects</h3>
         <ul>
             {% for project_id, project in projects.items() %}
-            <li><a href="/project/{{ project_id }}">{{ project.title }}</a></li>
+            <li><a href="/project/{{ project_id }}">{{ loop.index }}. {{ project.title }}</a></li>
             {% endfor %}
         </ul>
     </div>
