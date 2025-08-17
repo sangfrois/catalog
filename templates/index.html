@@ -443,6 +443,37 @@
         color: var(--primary);
         font-weight: bold;
     }
+
+    .logo-section {
+        margin-top: 4rem;
+        padding-top: 2rem;
+        border-top: 1px solid var(--muted);
+        text-align: center;
+    }
+    .logo-section h4 {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1rem;
+        color: var(--muted);
+        margin-bottom: 2rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .logo-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 4rem;
+        flex-wrap: wrap;
+    }
+    .logo-container img {
+        max-height: 60px;
+        max-width: 150px;
+        filter: grayscale(100%) brightness(1.5);
+        transition: filter 0.3s ease;
+    }
+    .logo-container img:hover {
+        filter: grayscale(0%) brightness(1);
+    }
 </style>
 {% endblock %}
 
@@ -541,6 +572,15 @@
         <p><span class="role">Exhibition Curation & Intro Text:</span> Ceyda Yolg&ouml;rmez</p>
         <p><span class="role">Technical Direction:</span> Fran&ccedil;ois Lespinasse & Kamyar Karimi</p>
         <p><span class="role">Website Design & Development:</span> Fran&ccedil;ois Lespinasse</p>
+    </div>
+
+    <div class="logo-section">
+        <h4>With support from</h4>
+        <div class="logo-container">
+            <img src="/static/img/concordia.png" alt="Concordia University Logo">
+            <img src="/static/img/milieux.png" alt="Milieux Institute Logo">
+            <img src="/static/img/AppliedAI.png" alt="Applied AI Institute Logo">
+        </div>
     </div>
 </div>
 
