@@ -1,5 +1,10 @@
 /* Additional global styles for enhanced surrealist aesthetic */
 
+/* Style for floating words to ensure they are visible on a dark background */
+.floating-fragments {
+    color: rgba(255, 255, 255, 0.2);
+}
+
 .typewriter {
     overflow: hidden;
     border-right: .15em solid var(--accent);
