@@ -227,44 +227,128 @@ def process_text_bilingual(text):
 def get_word_network():
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
-    c.execute('SELECT content FROM feedback')
-    texts = [row[0] for row in c.fetchall()]
+    c.execute('SELECT content, project, timestamp FROM feedback ORDER BY timestamp')
+    feedback_data = [{'content': row[0], 'project': row[1], 'timestamp': row[2]} for row in c.fetchall()]
     conn.close()
 
-    if len(texts) < 2:
-        return jsonify({'nodes': [], 'links': []})
+    if len(feedback_data) < 2:
+        return jsonify({'nodes': [], 'links': [], 'metadata': {'total_feedback': 0}})
 
-    # Process texts to extract meaningful keywords bilingually
-    keyword_docs = [process_text_bilingual(text) for text in texts]
-    word_freq = Counter(keyword for doc in keyword_docs for keyword in doc)
+    # Extract concepts with project context
+    all_concepts = []
+    project_concepts = {}
+    concept_projects = {}
+    
+    for entry in feedback_data:
+        concepts = process_text_bilingual(entry['content'])
+        all_concepts.extend(concepts)
+        
+        # Track which projects each concept appears in
+        for concept in concepts:
+            if concept not in concept_projects:
+                concept_projects[concept] = set()
+            concept_projects[concept].add(entry['project'])
+        
+        # Track concepts per project
+        if entry['project'] not in project_concepts:
+            project_concepts[entry['project']] = []
+        project_concepts[entry['project']].extend(concepts)
 
-    # Calculate co-occurrence
+    concept_freq = Counter(all_concepts)
+    if not concept_freq:
+        return jsonify({'nodes': [], 'links': [], 'metadata': {'total_feedback': len(feedback_data)}})
+
+    # Select top concepts
+    top_concepts = {concept for concept, freq in concept_freq.most_common(35)}
+    
+    # Calculate enhanced relationships
+    relationships = []
+    
+    # 1. Traditional co-occurrence within same feedback
     co_occurrence = Counter()
-    for doc in keyword_docs:
-        # Get all pairs of keywords in the doc
-        for w1, w2 in combinations(doc, 2):
-            # Sort to ensure (w1, w2) is the same as (w2, w1)
-            pair = tuple(sorted((w1, w2)))
+    for entry in feedback_data:
+        concepts = [c for c in process_text_bilingual(entry['content']) if c in top_concepts]
+        for c1, c2 in combinations(concepts, 2):
+            pair = tuple(sorted((c1, c2)))
             co_occurrence[pair] += 1
-
-    if not word_freq:
-        return jsonify({'nodes': [], 'links': []})
-
-    # Select top words for the network
-    top_words = {word for word, freq in word_freq.most_common(30)}
-
-    nodes = [{'id': word, 'frequency': word_freq[word], 'size': 12 + word_freq[word] * 5} for word in top_words]
-
-    links = []
-    for (w1, w2), weight in co_occurrence.items():
-        if w1 in top_words and w2 in top_words and weight > 0:
-            links.append({
-                'source': w1,
-                'target': w2,
-                'strength': weight
+    
+    # 2. Cross-project conceptual bridges (concepts that appear in multiple projects)
+    cross_project_strength = {}
+    for concept in top_concepts:
+        projects_with_concept = concept_projects.get(concept, set())
+        if len(projects_with_concept) > 1:
+            # This concept bridges multiple projects
+            for other_concept in top_concepts:
+                if other_concept != concept:
+                    other_projects = concept_projects.get(other_concept, set())
+                    shared_projects = projects_with_concept & other_projects
+                    if shared_projects:
+                        pair = tuple(sorted((concept, other_concept)))
+                        cross_project_strength[pair] = len(shared_projects)
+    
+    # 3. Semantic clustering based on project co-occurrence
+    project_semantic_links = Counter()
+    for project, concepts in project_concepts.items():
+        project_concepts_filtered = [c for c in concepts if c in top_concepts]
+        for c1, c2 in combinations(set(project_concepts_filtered), 2):
+            pair = tuple(sorted((c1, c2)))
+            project_semantic_links[pair] += 1
+    
+    # Combine all relationship types
+    all_pairs = set(co_occurrence.keys()) | set(cross_project_strength.keys()) | set(project_semantic_links.keys())
+    
+    for pair in all_pairs:
+        c1, c2 = pair
+        
+        # Calculate composite strength
+        cooccur_strength = co_occurrence.get(pair, 0)
+        bridge_strength = cross_project_strength.get(pair, 0) * 2  # Boost cross-project links
+        semantic_strength = project_semantic_links.get(pair, 0)
+        
+        total_strength = cooccur_strength + bridge_strength + semantic_strength
+        
+        if total_strength > 0:
+            # Determine link type
+            if bridge_strength > cooccur_strength and bridge_strength > semantic_strength:
+                link_type = 'bridge'
+            elif semantic_strength > cooccur_strength:
+                link_type = 'semantic'
+            else:
+                link_type = 'cooccurrence'
+            
+            relationships.append({
+                'source': c1,
+                'target': c2,
+                'strength': min(total_strength, 8),  # Cap for visualization
+                'type': link_type,
+                'projects': list(concept_projects.get(c1, set()) & concept_projects.get(c2, set()))
             })
 
-    return jsonify({'nodes': nodes, 'links': links})
+    # Create enhanced nodes
+    nodes = []
+    for concept in top_concepts:
+        projects_list = list(concept_projects.get(concept, set()))
+        node_type = 'bridge' if len(projects_list) > 2 else 'local'
+        
+        nodes.append({
+            'id': concept,
+            'frequency': concept_freq[concept],
+            'size': 10 + min(concept_freq[concept] * 3, 20),
+            'type': node_type,
+            'projects': projects_list,
+            'cross_project_score': len(projects_list)
+        })
+
+    return jsonify({
+        'nodes': nodes,
+        'links': relationships,
+        'metadata': {
+            'total_feedback': len(feedback_data),
+            'unique_concepts': len(top_concepts),
+            'cross_project_bridges': len([n for n in nodes if n['type'] == 'bridge']),
+            'projects': list(project_concepts.keys())
+        }
+    })
 
 @app.route('/api/trace/<visitor_id>')
 def get_trace(visitor_id):
