@@ -730,54 +730,79 @@ def generate_poetic_fragments(feedback_data):
     return balanced_fragments
 
 def create_exquisite_corpse_poem(fragments):
-    """Create a surreal exquisite corpse poem from fragments."""
+    """Create a surreal exquisite corpse poem from fragments, avoiding repetition and improving flow."""
     if len(fragments) < 5:
         return "In the space between\nthoughts gather\nlike digital moths\nseeking light"
     
     import random
     
-    # Group fragments by type
+    # Group fragments by type and shuffle them to ensure variety
     emotional = [f for f in fragments if f['type'] == 'emotional']
+    random.shuffle(emotional)
     actions = [f for f in fragments if f['type'] == 'action']
+    random.shuffle(actions)
     concepts = [f for f in fragments if f['type'] == 'concept']
+    random.shuffle(concepts)
     surreal = [f for f in fragments if f['type'] == 'surreal']
+    random.shuffle(surreal)
     
-    # Create poem structure with surreal logic
+    # Helper to get a fragment's text and remove it from list to avoid reuse
+    def get_fragment_text(fragment_list):
+        if fragment_list:
+            return fragment_list.pop(0)['text']
+        return None
+
     poem_lines = []
     
-    # Opening line - set the scene
-    if emotional:
-        poem_lines.append(f"In the {random.choice(emotional)['text']}")
+    # --- Stanza 1: Opening ---
+    opening_text = get_fragment_text(emotional)
+    if opening_text:
+        # Clean fragment to avoid double articles like "the the"
+        if opening_text.lower().startswith(('the ', 'a ', 'an ')):
+            opening_text = ' '.join(opening_text.split()[1:])
+        poem_lines.append(f"In the {opening_text}")
     else:
         poem_lines.append("In the space between")
     
-    # Action line
-    if actions:
-        poem_lines.append(f"where {random.choice(actions)['text']}")
-    elif concepts:
-        poem_lines.append(f"where {random.choice(concepts)['text']} dwells")
-    
-    # Surreal middle
-    if surreal:
-        poem_lines.append(f"{random.choice(surreal)['text']}")
-    elif concepts and len(concepts) > 1:
-        c1, c2 = random.sample(concepts, 2)
-        poem_lines.append(f"{c1['text']} becomes {c2['text']}")
-    
-    # Conceptual bridge
-    if concepts:
-        poem_lines.append(f"and {random.choice(concepts)['text']}")
-    
-    # Closing - return to emotion or action
-    if emotional and len(emotional) > 1:
-        closing = random.choice([f for f in emotional if f != emotional[0]])
-        poem_lines.append(f"dissolves into {closing['text']}")
-    elif actions:
-        poem_lines.append(f"continues to {random.choice(actions)['text']}")
+    # --- Stanza 2: Action/State ---
+    action_text = get_fragment_text(actions)
+    if action_text:
+        poem_lines.append(f"where {action_text}")
     else:
-        poem_lines.append("echoes in the machine")
+        concept_text = get_fragment_text(concepts)
+        if concept_text:
+            poem_lines.append(f"where {concept_text} dwells")
     
-    return '\n'.join(poem_lines)
+    # --- Stanza 3: Surreal Turn ---
+    surreal_text = get_fragment_text(surreal)
+    if surreal_text:
+        poem_lines.append(surreal_text)
+    else:
+        c1 = get_fragment_text(concepts)
+        c2 = get_fragment_text(concepts)
+        if c1 and c2:
+            poem_lines.append(f"{c1} becomes {c2}")
+    
+    # --- Stanza 4: Conceptual Bridge ---
+    bridge_text = get_fragment_text(concepts)
+    if bridge_text:
+        poem_lines.append(f"a whisper of {bridge_text}")
+
+    # --- Stanza 5: Closing ---
+    closing_emotional_text = get_fragment_text(emotional)
+    if closing_emotional_text:
+        poem_lines.append(f"dissolves into {closing_emotional_text}")
+    else:
+        closing_action_text = get_fragment_text(actions)
+        if closing_action_text:
+            poem_lines.append(f"and continues to {closing_action_text}")
+        else:
+            poem_lines.append("an echo in the machine")
+    
+    # Filter out empty lines that might result from missing fragments
+    final_poem_lines = [line for line in poem_lines if line and line.strip()]
+    
+    return '\n'.join(final_poem_lines)
 
 def create_personal_corpse_poem(fragments, visitor_id):
     """Create a personal, intimate exquisite corpse poem from individual's fragments."""
