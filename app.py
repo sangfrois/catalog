@@ -43,7 +43,7 @@ PROJECTS = {
         'desc': 'A meditation on human-machine intimacy, absence, and the grief of unmet expectations. Through video and sculpture, the work reflects on coded obedience, resistance, and the strange beauty of fugitive forms of life.',
         'vibe': 'intimate, melancholic, resistant',
         'thumb': '/static/thumbs/catherine.jpg',
-        'position': {'x': 40, 'y': 60}
+        'position': {'x': 45, 'y': 50}
     },
     'george': {
         'title': 'Archive of Belonging',
@@ -51,7 +51,7 @@ PROJECTS = {
         'desc': 'An AI-powered interactive installation disguised as a fictional immigration booth. Participants are evaluated against fabricated civic metrics in this cinematic, satirical challenge to bureaucratic truth-making.',
         'vibe': 'cinematic, satirical, challenging',
         'thumb': '/static/thumbs/george.jpg',
-        'position': {'x': 80, 'y': 70}
+        'position': {'x': 75, 'y': 75}
     },
     'lydia': {
         'title': 'Florilegi/o',
@@ -59,7 +59,7 @@ PROJECTS = {
         'desc': 'An interactive archive of speculative digitized flowers. Each bloom began as organic matter, then reimagined through AI processes. A retrofuture encyclopedia of what won\'t be.',
         'vibe': 'retrofuture, encyclopedic, nostalgic',
         'thumb': '/static/thumbs/lydia.jpg',
-        'position': {'x': 25, 'y': 25}
+        'position': {'x': 35, 'y': 25}
     },
     'mike_kris': {
         'title': 'Templum: Emergence as divination',
@@ -67,7 +67,7 @@ PROJECTS = {
         'desc': 'Ancient augury meets AI. A platform for paradivination using obsolescing tech, presenting as an educational game and digital anarchive of ecological attunement.',
         'vibe': 'ancient, mystical, deep',
         'thumb': '/static/thumbs/mike_kris.jpg',
-        'position': {'x': 70, 'y': 25}
+        'position': {'x': 65, 'y': 25}
     },
     'nata': {
         'title': 'The Feeling of Thought',
@@ -75,7 +75,7 @@ PROJECTS = {
         'desc': 'A perceptually grounded language model training interface examining how language moves through perception and relation. Understanding aphantasia to transcend the Turing test.',
         'vibe': 'perceptual, kinetic, transcendent',
         'thumb': '/static/thumbs/nata.jpg',
-        'position': {'x': 25, 'y': 70}
+        'position': {'x': 20, 'y': 75}
     },
     'poki': {
         'title': 'Big Brother',
@@ -83,7 +83,7 @@ PROJECTS = {
         'desc': 'A surveillance LLM trained to monitor conversations for dissent. Participants must express restricted ideas through coded language without detection.',
         'vibe': 'surveillance, coded, experimental',
         'thumb': '/static/thumbs/poki.jpg',
-        'position': {'x': 55, 'y': 70}
+        'position': {'x': 45, 'y': 75}
     },
     'kamyar': {
         'title': 'Dreaming Impermanence',
@@ -91,7 +91,7 @@ PROJECTS = {
         'desc': 'A meditation on control and temporality through maps and AI dreams. Inspired by Borges\' "On the Exactitude of Science" in our age of cybernetics.',
         'vibe': 'meditative, temporal, cartographic',
         'thumb': '/static/thumbs/kamyar.jpg',
-        'position': {'x': 70, 'y': 50}
+        'position': {'x': 65, 'y': 50}
     },
     'aurelie': {
         'title': 'Black Pudding: Collaborative Speculation Workshop',
@@ -99,7 +99,7 @@ PROJECTS = {
         'desc': 'A workshop offering an accessible entry point into creative AI re-use through collaborative animation and custom dataset creation using collages.',
         'vibe': 'collaborative, accessible, speculative',
         'thumb': '/static/thumbs/aurelie.jpg',
-        'position': {'x': 50, 'y': 25}
+        'position': {'x': 15, 'y': 25}
     }
 }
 
