@@ -16,7 +16,7 @@ def get_local_ip():
 if __name__ == '__main__':
     local_ip = get_local_ip()
     print("Starting Machinic Encounters Catalog...")
-    print(f"📱 QR Code visitors can access at: http://{local_ip}:5000")
-    print(f"📊 Dashboard for projection at: http://{local_ip}:5000/dashboard")
-    print(f"🌐 Network access: http://{local_ip}:5000")
+    print(f"QR Code visitors can access at: http://{local_ip}:5000")
+    print(f"Dashboard for projection at: http://{local_ip}:5000/dashboard")
+    print(f"Network access: http://{local_ip}:5000")
     socketio.run(app, debug=True, host='0.0.0.0', port=5000)
