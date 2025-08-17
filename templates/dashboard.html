@@ -217,6 +217,8 @@
                 thoughtCount = Object.values(data).reduce((a, b) => a + b, 0);
                 document.getElementById('thoughtCount').textContent = thoughtCount;
                 
+                document.getElementById('wordcloud').innerHTML = '';
+                
                 if (currentMode === 'wordcloud') {
                     renderWordcloud();
                 } else if (currentMode === 'network') {
@@ -408,6 +410,8 @@
         // Create persistent floating words that cycle through
         const createFloatingWord = (word, freq, delay) => {
             setTimeout(() => {
+                if (currentMode !== 'flow') return;
+
                 const wordEl = document.createElement('div');
                 wordEl.className = 'word-node floating-word';
                 wordEl.textContent = word;
@@ -440,7 +444,9 @@
                 // Remove and recreate for continuous flow
                 setTimeout(() => {
                     wordEl.remove();
-                    createFloatingWord(word, freq, 0); // Recreate immediately
+                    if (currentMode === 'flow') {
+                        createFloatingWord(word, freq, 0); // Recreate immediately
+                    }
                 }, duration + 100);
             }, delay);
         };
