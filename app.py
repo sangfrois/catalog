@@ -393,6 +393,37 @@ def get_trace(visitor_id):
     
     return jsonify({'visits': visits, 'feedback': feedback})
 
+@app.route('/api/personal_corpse/<visitor_id>')
+def get_personal_corpse(visitor_id):
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute('SELECT content, project, timestamp FROM feedback WHERE visitor_id = ? ORDER BY timestamp', (visitor_id,))
+    feedback_data = [{'content': row[0], 'project': row[1], 'timestamp': row[2]} for row in c.fetchall()]
+    conn.close()
+
+    if len(feedback_data) < 2:
+        return jsonify({
+            'fragments': [], 
+            'poem': 'Your thoughts are still\nforming in the digital\nether...',
+            'metadata': {'source_count': len(feedback_data)}
+        })
+
+    # Generate personal fragments using the same creative manipulation
+    fragments = generate_poetic_fragments(feedback_data)
+    
+    # Create a more personal, intimate poem structure
+    poem = create_personal_corpse_poem(fragments, visitor_id)
+    
+    return jsonify({
+        'fragments': fragments,
+        'poem': poem,
+        'metadata': {
+            'source_count': len(feedback_data),
+            'generation_time': datetime.now().isoformat(),
+            'visitor_id': visitor_id
+        }
+    })
+
 @socketio.on('connect')
 def handle_connect():
     print('Client connected')
@@ -537,6 +568,76 @@ def create_exquisite_corpse_poem(fragments):
         poem_lines.append(f"continues to {random.choice(actions)['text']}")
     else:
         poem_lines.append("echoes in the machine")
+    
+    return '\n'.join(poem_lines)
+
+def create_personal_corpse_poem(fragments, visitor_id):
+    """Create a personal, intimate exquisite corpse poem from individual's fragments."""
+    if len(fragments) < 3:
+        return f"Your thoughts drift\nthrough digital space\nwaiting to become\nsomething more"
+    
+    import random
+    
+    # Group fragments by type
+    emotional = [f for f in fragments if f['type'] == 'emotional']
+    actions = [f for f in fragments if f['type'] == 'action']
+    concepts = [f for f in fragments if f['type'] == 'concept']
+    surreal = [f for f in fragments if f['type'] == 'surreal']
+    
+    # Create more personal, introspective poem structure
+    poem_lines = []
+    
+    # Personal opening - more intimate
+    personal_openings = [
+        "You entered seeking",
+        "Your mind wandered through",
+        "In your reflection",
+        "You discovered",
+        "Your thoughts became"
+    ]
+    
+    if emotional:
+        poem_lines.append(f"{random.choice(personal_openings)} {random.choice(emotional)['text']}")
+    elif concepts:
+        poem_lines.append(f"{random.choice(personal_openings)} {random.choice(concepts)['text']}")
+    else:
+        poem_lines.append(f"{random.choice(personal_openings)} something unnamed")
+    
+    # Personal action/transformation
+    if actions:
+        poem_lines.append(f"and began to {random.choice(actions)['text']}")
+    elif surreal:
+        poem_lines.append(f"and felt {random.choice(surreal)['text']}")
+    elif concepts:
+        poem_lines.append(f"and touched {random.choice(concepts)['text']}")
+    
+    # Middle - the encounter
+    if surreal and concepts:
+        poem_lines.append(f"where {random.choice(surreal)['text']} meets {random.choice(concepts)['text']}")
+    elif emotional and len(emotional) > 1:
+        e1, e2 = random.sample(emotional, 2)
+        poem_lines.append(f"between {e1['text']} and {e2['text']}")
+    elif concepts and len(concepts) > 1:
+        c1, c2 = random.sample(concepts, 2)
+        poem_lines.append(f"as {c1['text']} transforms into {c2['text']}")
+    else:
+        poem_lines.append("in the liminal space")
+    
+    # Personal resolution - what remains
+    personal_endings = [
+        "Now you carry",
+        "You leave with",
+        "Your trace remains as",
+        "You become",
+        "In you lives"
+    ]
+    
+    if concepts:
+        poem_lines.append(f"{random.choice(personal_endings)} {random.choice(concepts)['text']}")
+    elif emotional:
+        poem_lines.append(f"{random.choice(personal_endings)} {random.choice(emotional)['text']}")
+    else:
+        poem_lines.append(f"{random.choice(personal_endings)} the memory of encounter")
     
     return '\n'.join(poem_lines)
 

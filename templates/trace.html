@@ -116,14 +116,88 @@
     
     .corpse-title {
         font-size: 1.5rem;
-        margin-bottom: 1rem;
+        margin-bottom: 0.5rem;
         color: var(--accent);
+        font-family: 'JetBrains Mono', monospace;
+        letter-spacing: 2px;
+    }
+    
+    .corpse-subtitle {
+        font-size: 0.9rem;
+        color: var(--muted);
+        margin-bottom: 1.5rem;
+        font-style: italic;
     }
     
     .corpse-poem {
         font-size: 1.1rem;
         line-height: 1.8;
         font-style: italic;
+        margin-bottom: 2rem;
+    }
+    
+    .corpse-fragments {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .personal-fragment {
+        background: rgba(0, 255, 136, 0.1);
+        border: 1px solid rgba(0, 255, 136, 0.3);
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        border-radius: 15px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .personal-fragment:hover {
+        background: var(--accent);
+        color: var(--secondary);
+        transform: scale(1.05);
+    }
+    
+    .personal-fragment.emotional {
+        border-color: #ff6b6b;
+        color: #ff6b6b;
+    }
+    
+    .personal-fragment.action {
+        border-color: #4ecdc4;
+        color: #4ecdc4;
+    }
+    
+    .personal-fragment.concept {
+        border-color: #45b7d1;
+        color: #45b7d1;
+    }
+    
+    .personal-fragment.surreal {
+        border-color: #f9ca24;
+        color: #f9ca24;
+    }
+    
+    .corpse-refresh {
+        background: none;
+        border: 2px solid var(--accent);
+        color: var(--accent);
+        padding: 10px 20px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: 'JetBrains Mono', monospace;
+        letter-spacing: 1px;
+    }
+    
+    .corpse-refresh:hover {
+        background: var(--accent);
+        color: var(--secondary);
+        transform: translate(-2px, -2px);
+        box-shadow: 2px 2px 0 var(--accent);
     }
     
     .empty-state {
@@ -192,8 +266,13 @@
     </div>
     
     <div class="exquisite-corpse" id="exquisiteCorpse" style="display: none;">
-        <h3 class="corpse-title">Your Exquisite Corpse</h3>
+        <h3 class="corpse-title">YOUR PERSONAL EXQUISITE CORPSE</h3>
+        <p class="corpse-subtitle">A surreal reflection of your journey through the exhibition</p>
         <p class="corpse-poem" id="corpsePoem"></p>
+        <div class="corpse-fragments" id="corpseFragments"></div>
+        <button class="corpse-refresh" onclick="loadPersonalCorpse()" style="margin-top: 1rem;">
+            REGENERATE YOUR CORPSE
+        </button>
     </div>
     
     <div class="trace-section">
@@ -227,7 +306,7 @@
                 renderVisits(data.visits);
                 renderFeedback(data.feedback);
                 updateStats(data);
-                generateExquisiteCorpse(data.feedback);
+                loadPersonalCorpse();
             })
             .catch(error => {
                 console.error('Error loading trace:', error);
@@ -277,39 +356,35 @@
         document.getElementById('wordCount').textContent = totalWords;
     }
     
-    function generateExquisiteCorpse(feedback) {
-        if (feedback.length < 2) return;
-        
-        // Extract interesting phrases and words
-        const words = [];
-        const phrases = [];
-        
-        feedback.forEach(item => {
-            const content = item.content.toLowerCase();
-            const contentWords = content.split(/\s+/).filter(w => w.length > 3);
-            words.push(...contentWords);
-            
-            // Extract phrases (sequences of 2-4 words)
-            for (let i = 0; i < contentWords.length - 1; i++) {
-                const phrase = contentWords.slice(i, i + Math.min(3, contentWords.length - i)).join(' ');
-                if (phrase.length > 8) phrases.push(phrase);
-            }
-        });
-        
-        // Create surreal combinations
-        const poem = [];
-        for (let i = 0; i < 4; i++) {
-            const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)] || 
-                                words[Math.floor(Math.random() * words.length)];
-            const randomWord = words[Math.floor(Math.random() * words.length)];
-            
-            poem.push(`${randomPhrase} ${randomWord}`);
-        }
-        
-        if (poem.length > 0) {
-            document.getElementById('corpsePoem').textContent = poem.join(' / ');
-            document.getElementById('exquisiteCorpse').style.display = 'block';
-        }
+    function loadPersonalCorpse() {
+        fetch(`/api/personal_corpse/${visitorId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.fragments.length > 0 || data.poem !== 'Your thoughts are still\nforming in the digital\nether...') {
+                    document.getElementById('corpsePoem').innerHTML = data.poem.replace(/\n/g, '<br>');
+                    
+                    // Render fragments
+                    const fragmentsContainer = document.getElementById('corpseFragments');
+                    fragmentsContainer.innerHTML = data.fragments.map(fragment => 
+                        `<span class="personal-fragment ${fragment.type}" title="From: ${getProjectTitle(fragment.project)}">${fragment.text}</span>`
+                    ).join('');
+                    
+                    // Add click handlers to fragments
+                    fragmentsContainer.querySelectorAll('.personal-fragment').forEach(fragment => {
+                        fragment.addEventListener('click', () => {
+                            fragment.style.animation = 'pulse 0.5s ease-in-out';
+                            setTimeout(() => {
+                                fragment.style.animation = '';
+                            }, 500);
+                        });
+                    });
+                    
+                    document.getElementById('exquisiteCorpse').style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading personal corpse:', error);
+            });
     }
     
     function getProjectTitle(projectId) {
