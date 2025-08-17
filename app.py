@@ -61,7 +61,7 @@ PROJECTS = {
         'artist': 'George Kerasias',
         'desc': 'An AI-powered interactive installation disguised as a fictional immigration booth. Participants are evaluated against fabricated civic metrics in this cinematic, satirical challenge to bureaucratic truth-making.',
         'vibe': 'cinematic, satirical, challenging',
-        'thumb': '/static/thumbs/george.jpg',
+        'thumb': '/static/img/george.png',
         'position': {'x': 75, 'y': 75}
     },
     'lydia': {
@@ -69,7 +69,7 @@ PROJECTS = {
         'artist': 'Lydia Graveline & Louis Barbier',
         'desc': 'An interactive archive of speculative digitized flowers. Each bloom began as organic matter, then reimagined through AI processes. A retrofuture encyclopedia of what won\'t be.',
         'vibe': 'retrofuture, encyclopedic, nostalgic',
-        'thumb': '/static/thumbs/lydia.jpg',
+        'thumb': '/static/img/lydiaandlouis.png',
         'position': {'x': 35, 'y': 25}
     },
     'mike_kris': {
@@ -77,7 +77,7 @@ PROJECTS = {
         'artist': 'Mike Cassidy & Kristian North',
         'desc': 'Ancient augury meets AI. A platform for paradivination using obsolescing tech, presenting as an educational game and digital anarchive of ecological attunement.',
         'vibe': 'ancient, mystical, deep',
-        'thumb': '/static/thumbs/mike_kris.jpg',
+        'thumb': '/static/img/krisandmike.png',
         'position': {'x': 65, 'y': 25}
     },
     'nata': {
@@ -85,7 +85,7 @@ PROJECTS = {
         'artist': 'Nata Pavlik & Jihane Mossalim',
         'desc': 'A perceptually grounded language model training interface examining how language moves through perception and relation. Understanding aphantasia to transcend the Turing test.',
         'vibe': 'perceptual, kinetic, transcendent',
-        'thumb': '/static/thumbs/nata.jpg',
+        'thumb': '/static/img/nataandjihane.png',
         'position': {'x': 20, 'y': 75}
     },
     'poki': {
@@ -93,7 +93,7 @@ PROJECTS = {
         'artist': 'Poki Chan & Karim Nafiz',
         'desc': 'A surveillance LLM trained to monitor conversations for dissent. Participants must express restricted ideas through coded language without detection.',
         'vibe': 'surveillance, coded, experimental',
-        'thumb': '/static/thumbs/poki.jpg',
+        'thumb': '/static/img/pokiandkarim.png',
         'position': {'x': 45, 'y': 75}
     },
     'kamyar': {
@@ -101,7 +101,7 @@ PROJECTS = {
         'artist': 'Kamyar Karimi',
         'desc': 'A meditation on control and temporality through maps and AI dreams. Inspired by Borges\' "On the Exactitude of Science" in our age of cybernetics.',
         'vibe': 'meditative, temporal, cartographic',
-        'thumb': '/static/thumbs/kamyar.jpg',
+        'thumb': '/static/img/kamyar.png',
         'position': {'x': 65, 'y': 50}
     },
     'aurelie': {
@@ -109,7 +109,7 @@ PROJECTS = {
         'artist': 'Aurélie Petit',
         'desc': 'A workshop offering an accessible entry point into creative AI re-use through collaborative animation and custom dataset creation using collages.',
         'vibe': 'collaborative, accessible, speculative',
-        'thumb': '/static/thumbs/aurelie.jpg',
+        'thumb': '/static/img/aurelie.png',
         'position': {'x': 15, 'y': 25}
     }
 }

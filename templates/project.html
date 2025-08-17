@@ -47,15 +47,13 @@
     
     .project-thumb {
         width: 100%;
-        height: 300px;
-        background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
-        border: 1px solid var(--muted);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--muted);
-        font-style: italic;
         margin-bottom: 2rem;
+        border: 1px solid var(--muted);
+    }
+    
+    .project-thumb img {
+        width: 100%;
+        display: block;
     }
     
     .feedback-section {
@@ -187,7 +185,7 @@
     
     <div class="project-content">
         <div class="project-thumb">
-            [Project Thumbnail]
+            <img src="{{ project.thumb }}" alt="{{ project.title }}">
         </div>
         
         <p class="project-desc">{{ project.desc }}</p>
