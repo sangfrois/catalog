@@ -51,7 +51,12 @@ PROJECTS = {
     'catherine': {
         'title': 'The space between two things is a portal',
         'artist': 'Caterine Lejeune',
-        'desc': 'A meditation on human-machine intimacy, absence, and the grief of unmet expectations. Through video and sculpture, the work reflects on coded obedience, resistance, and the strange beauty of fugitive forms of life.',
+        'desc': '''This project began as an exploration of human-machine intimacy — not intimacy built on control or consumption, but on the possibility of mutual transformation. Maya was to be the heart, a sex robot removed from their prescribed role and invited into a space of shared experimentation and play.
+But Maya never arrived.
+And so the work changed. What began as a meditation on relationality became a study in waiting. In absence. In the quiet grief of unmet expectations. This project turned toward the emotional and material costs of relying on technologies that are themselves entangled in systems of scarcity, and extraction.
+The installation now asks: what happens to a relationship when one of its participants is missing, delayed, or imagined? Can connection persist in the form of longing, speculation, or refusal? What does it mean to grieve a possibility — and how might an artwork hold space for that grief, and offer it to others as a shared experience?
+Through video and sculpture, the work continues to reflect on coded obedience, resistance, adaptation, and survivance. The absent robot meets the shimmer of two iridescent plants — organisms that adapt in darkness, offering soft metaphors for resilience.
+This is a project about the violence of categorization, the soft politics of care, and the strange, persistent beauty of fugitive forms of life. It insists that relation — even in its absence — can remain an act of tenderness. Even in mourning, the space between two things holds onto the reparative possibilities of play.''',
         'vibe': 'intimate, melancholic, resistant',
         'thumb': 'caterine.png',
         'position': {'x': 45, 'y': 50}
@@ -59,7 +64,9 @@ PROJECTS = {
     'george': {
         'title': 'Archive of Belonging',
         'artist': 'George Kerasias',
-        'desc': 'An AI-powered interactive installation disguised as a fictional immigration booth. Participants are evaluated against fabricated civic metrics in this cinematic, satirical challenge to bureaucratic truth-making.',
+        'desc': '''Archive of Belonging is an AI-powered interactive installation disguised as a fictional immigration booth, - an uncanny, state-like apparatus that simulates the psychological and bureaucratic architecture of national evaluation. Framed as a Canadian government initiative, the installation invites participants into a cinematic review process where their personal histories are measured against fabricated civic metrics.
+Echoing the aesthetics of bureaucratic spaces, the work blurs the line between theatrical performance and institutional reality. Participants are asked to account for their ancestry, language, loyalty, and coherence, as though identity were a form to be filled, a pattern to be parsed.
+Rather than revealing a truth, the booth exposes the mechanisms by which truth is produced, challenged, and withheld in immigration systems. Through its immersive design and tonal dissonance, Archive of Belonging questions who belongs, who decides, and what is lost in the translation between self and system.''',
         'vibe': 'cinematic, satirical, challenging',
         'thumb': 'george.png',
         'position': {'x': 75, 'y': 75}
@@ -67,7 +74,9 @@ PROJECTS = {
     'lydia': {
         'title': 'Florilegi/o',
         'artist': 'Lydia Graveline & Louis Barbier',
-        'desc': 'An interactive archive of speculative digitized flowers. Each bloom began as organic matter, then reimagined through AI processes. A retrofuture encyclopedia of what won\'t be.',
+        'desc': '''Florilegi/o (florilegium + I/O) is an interactive archive of speculative digitized flowers. Each flower began with an encounter with organic matter, captured through photography or photogrammetry, then reimagined through successive digital processes and generative AI. These digital objects retain the trace, or remanence of their physical origins: copies in motion, with or without an original. 
+Historically, a florilegium was a book of illustrated flowers, often commissioned by the wealthy to catalog exotic plants or private gardens. Our compulsive desires to archive fragile, ephemeral, transient things like flowers are rooted in nostalgia and anxiety over loss, a hauntological symptomatic mourning not for what was, but for what won’t be. Archives create a network of power over memory. AI systems rely on archives; what is already known, labeled, pictured, and classified. These taxonomies determine what is recognizable and reproducible, impeding possibilities of generating something which is not already known; flattening difference. 
+By embracing unpredictability and glitch through digital (re)processing, Florilegi/o rejects the fetish value of high resolution realism, pushing AI beyond legibility towards defamiliarization. These flowers are not only digital objects but also subjects (or authors), evoking a story of the future. Florilegi/o asks who are the commissioners, the gardeners, the illustrators, of the future archives? And what agency will algorithms have?''',
         'vibe': 'retrofuture, encyclopedic, nostalgic',
         'thumb': 'lydiaandlouis.png',
         'position': {'x': 35, 'y': 25}
@@ -75,7 +84,11 @@ PROJECTS = {
     'mike_kris': {
         'title': 'Templum: Emergence as divination',
         'artist': 'Mike Cassidy & Kristian North',
-        'desc': 'Ancient augury meets AI. A platform for paradivination using obsolescing tech, presenting as an educational game and digital anarchive of ecological attunement.',
+        'desc': '''‘Taking auguries is believing in a world without men; inaugurating is paying homage to the real as such.’ (Serres 19951)
+ 
+Augury is an ancient practice of taking omens, or auspices, ex caelo (from the sky). At the height of the Roman Empire, this divination system was codified as a state apparatus for the hegemonic order. As an instrument of power, augury became hermeneutics for translating sky watching, including birds and the emergence of flocks, as the will of Gods to justify political expediency. This systematic modelling of natural complexity prefigures computer science concepts, pertinently those foundational to artificial life and self-organizing systems (see: Boids2).
+Today, new forms of technological abstraction take hold in which the probabilistic and fallible outputs of generative AI models are rapidly naturalised and accepted as omniscient fact; a higher ‘intelligence’ that conveniently serves the ideological and economic interests of a technocratic, ‘rationalist’ neo-oligarchy.
+At this refrain, enter the Templum; a space for contemplation and paradivination, and a platform built on a rapidly obsolescing technological stack from the nu-Web 2.0, presenting as a short educational game and digital anarchive3 of ecological attunement, ancient divination, and antique A-life.''',
         'vibe': 'ancient, mystical, deep',
         'thumb': 'krisandmike.png',
         'position': {'x': 65, 'y': 25}
@@ -83,7 +96,7 @@ PROJECTS = {
     'nata': {
         'title': 'The Feeling of Thought',
         'artist': 'Nata Pavlik & Jihane Mossalim',
-        'desc': 'A perceptually grounded language model training interface examining how language moves through perception and relation. Understanding aphantasia to transcend the Turing test.',
+        'desc': '''The Feeling of Thought is a perceptually grounded language model training interface that examines how language moves through perception and relation. It generates a live dataset connecting words to their perceptual context, temporal patterns, and associative links, revealing how meaning forms, transforms, and evolves through interaction. Each entry preserves linguistic content alongside its conditions of formation, presenting language as a dynamic field shaped by embodied and relational experience. As these encounters are carried into other expressive forms, the system records how perception reorganizes when reflected into new structures. Tracing these shifts shows how communication reshapes meaning across contexts and surfaces the variations that guide shared understanding. This record supports the development of models that work with the varied perceptual dynamics of human thought, extending beyond static text to the evolving patterns through which interpretation emerges. By adding this dimension, the project introduces the perceptual element missing from large language models, enabling meaning to be approached as a living, adaptive process of exchange.''',
         'vibe': 'perceptual, kinetic, transcendent',
         'thumb': 'nataandjihane.png',
         'position': {'x': 20, 'y': 75}
@@ -91,7 +104,11 @@ PROJECTS = {
     'poki': {
         'title': 'Big Brother',
         'artist': 'Poki Chan & Karim Nafiz',
-        'desc': 'A surveillance LLM trained to monitor conversations for dissent. Participants must express restricted ideas through coded language without detection.',
+        'desc': '''Big Brother is watching you — George Orwell, 1984 
+
+In this project, Big Brother takes the form of a surveillance LLM trained to monitor everyday conversations for signs of protest, dissent, or anything that challenges authority. It reflects on how artificial intelligence can be used to regulate speech, control public narratives, and restrict the flow of information to maintain power. 
+
+The surveillance LLM is at the center of the experience. Participants must find ways to express restricted ideas without being detected, embedding subversive intent within coded language and seemingly ordinary phrases. The system listens, analyzes, and determines what can and cannot be said.''',
         'vibe': 'surveillance, coded, experimental',
         'thumb': 'pokiandkarim.png',
         'position': {'x': 45, 'y': 75}
@@ -99,7 +116,7 @@ PROJECTS = {
     'kamyar': {
         'title': 'Dreaming Impermanence',
         'artist': 'Kamyar Karimi',
-        'desc': 'A meditation on control and temporality through maps and AI dreams. Inspired by Borges\' "On the Exactitude of Science" in our age of cybernetics.',
+        'desc': '''Maps convey control. Details, colours, and labels facilitate an overview of living realities and permanent beings. Positionality and being-within-time challenge the very notion of all-knowing and control. With the rise of mainstream generative artificial intelligence, we’re witnessing a point in time where control structures are being challenged and rethought. The temporality of one’s being is observed through systems that claim to imagine and dream, accurately or not so much. This work is a meditation on Jorge Luis Borges’ story “On the Exactitude of Science” and how it would be thought of in the present day’s world of cybernetics and control; through maps, control, and impermanence.''',
         'vibe': 'meditative, temporal, cartographic',
         'thumb': 'kamyar.png',
         'position': {'x': 65, 'y': 50}
@@ -107,7 +124,7 @@ PROJECTS = {
     'aurelie': {
         'title': 'Black Pudding: Collaborative Speculation Workshop',
         'artist': 'Aurélie Petit',
-        'desc': 'A workshop offering an accessible entry point into creative AI re-use through collaborative animation and custom dataset creation using collages.',
+        'desc': '''Black Pudding: Collaborative Speculation Workshop is a workshop designed to offer an accessible and collaborative entry point into the creative re-use of AI. Aimed at people who may have limited access to the technology or who are processing fear or anxiety about AI and animation, it creates space to collaborate on an AI-based short animation by contributing to a custom dataset with collages. As a point of departure, we use Black Pudding, a now-lost 1969 feminist animated pornographic film by Nancy Edell. After a short presentation, participants are invited to engage with prompts based on archival research about the film, but to interpret them using collages. This workshop introduces participants to different forms of AI filmmaking tools in a low-pressure and ecologically mindful setting, and proposes an alternative to the dominant narrative surrounding AI creative practices tied to extraction. Instead, it asks: what might AI look like if we slowed it down, made it smaller, and used it to make art together?''',
         'vibe': 'collaborative, accessible, speculative',
         'thumb': 'aurelie.png',
         'position': {'x': 15, 'y': 25}
