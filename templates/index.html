@@ -143,12 +143,13 @@
     }
     
     .floating-fragments {
-        position: absolute;
+        position: fixed;
         font-size: 12px;
         color: var(--muted);
-        opacity: 0.3;
-        animation: float 10s infinite linear;
+        opacity: 0.4;
+        animation: float 12s infinite linear;
         pointer-events: none;
+        z-index: -1;
     }
     
     @keyframes float {
@@ -640,12 +641,12 @@
                 fragment.className = 'floating-fragments';
                 fragment.textContent = uniqueFragments[Math.floor(Math.random() * uniqueFragments.length)];
                 fragment.style.left = Math.random() * 100 + '%';
-                fragment.style.animationDuration = (8 + Math.random() * 4) + 's';
+                fragment.style.animationDuration = (10 + Math.random() * 5) + 's';
                 document.body.appendChild(fragment);
                 
                 setTimeout(() => {
                     fragment.remove();
-                }, 12000);
+                }, 15000);
             }
         }, 3000);
     }
