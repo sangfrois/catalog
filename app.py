@@ -350,6 +350,32 @@ def get_word_network():
         }
     })
 
+@app.route('/api/exquisite_corpse')
+def get_exquisite_corpse():
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute('SELECT content, project, timestamp FROM feedback ORDER BY timestamp DESC LIMIT 50')
+    feedback_data = [{'content': row[0], 'project': row[1], 'timestamp': row[2]} for row in c.fetchall()]
+    conn.close()
+
+    if len(feedback_data) < 3:
+        return jsonify({'fragments': [], 'poem': 'Waiting for thoughts to emerge...'})
+
+    # Generate creative fragments using language manipulation
+    fragments = generate_poetic_fragments(feedback_data)
+    
+    # Create an exquisite corpse poem
+    poem = create_exquisite_corpse_poem(fragments)
+    
+    return jsonify({
+        'fragments': fragments,
+        'poem': poem,
+        'metadata': {
+            'source_count': len(feedback_data),
+            'generation_time': datetime.now().isoformat()
+        }
+    })
+
 @app.route('/api/trace/<visitor_id>')
 def get_trace(visitor_id):
     conn = sqlite3.connect(db_path)
@@ -370,6 +396,149 @@ def get_trace(visitor_id):
 @socketio.on('connect')
 def handle_connect():
     print('Client connected')
+
+def generate_poetic_fragments(feedback_data):
+    """Generate poetic fragments through creative language manipulation."""
+    fragments = []
+    
+    for entry in feedback_data:
+        text = entry['content']
+        project = entry['project']
+        
+        try:
+            # Detect language for processing
+            lang = detect(text)
+        except LangDetectException:
+            lang = 'en'
+        
+        nlp = nlp_fr if lang == 'fr' else nlp_en
+        doc = nlp(text)
+        
+        # Extract different types of poetic elements
+        
+        # 1. Emotional phrases (adjective + noun combinations)
+        emotional_phrases = []
+        for chunk in doc.noun_chunks:
+            if len(chunk) <= 4:  # Keep it concise
+                emotional_phrases.append(chunk.text.lower().strip())
+        
+        # 2. Action fragments (verb phrases)
+        action_fragments = []
+        for token in doc:
+            if token.pos_ == 'VERB' and not token.is_stop:
+                # Get verb with its immediate context
+                verb_phrase = []
+                for child in token.children:
+                    if child.pos_ in ['ADV', 'PART']:  # Adverbs and particles
+                        verb_phrase.append(child.text)
+                verb_phrase.append(token.lemma_)
+                if len(verb_phrase) <= 3:
+                    action_fragments.append(' '.join(verb_phrase))
+        
+        # 3. Conceptual bridges (meaningful single words)
+        concepts = []
+        for token in doc:
+            if (token.pos_ in ['NOUN', 'ADJ'] and 
+                not token.is_stop and 
+                len(token.text) > 3 and
+                token.text.lower() not in ['thing', 'things', 'something']):
+                concepts.append(token.lemma_.lower())
+        
+        # 4. Surreal combinations (unexpected word pairs)
+        surreal_pairs = []
+        tokens = [t for t in doc if not t.is_stop and t.pos_ in ['NOUN', 'ADJ', 'VERB']]
+        for i in range(len(tokens) - 1):
+            if tokens[i].pos_ != tokens[i+1].pos_:  # Different parts of speech
+                pair = f"{tokens[i].lemma_.lower()} {tokens[i+1].lemma_.lower()}"
+                surreal_pairs.append(pair)
+        
+        # Add fragments with metadata
+        for phrase in emotional_phrases[:2]:  # Limit to avoid spam
+            fragments.append({
+                'text': phrase,
+                'type': 'emotional',
+                'project': project,
+                'source': 'visitor reflection'
+            })
+        
+        for action in action_fragments[:1]:
+            fragments.append({
+                'text': action,
+                'type': 'action',
+                'project': project,
+                'source': 'visitor reflection'
+            })
+        
+        for concept in concepts[:2]:
+            fragments.append({
+                'text': concept,
+                'type': 'concept',
+                'project': project,
+                'source': 'visitor reflection'
+            })
+        
+        for pair in surreal_pairs[:1]:
+            fragments.append({
+                'text': pair,
+                'type': 'surreal',
+                'project': project,
+                'source': 'visitor reflection'
+            })
+    
+    # Shuffle and limit fragments
+    import random
+    random.shuffle(fragments)
+    return fragments[:30]
+
+def create_exquisite_corpse_poem(fragments):
+    """Create a surreal exquisite corpse poem from fragments."""
+    if len(fragments) < 5:
+        return "In the space between\nthoughts gather\nlike digital moths\nseeking light"
+    
+    import random
+    
+    # Group fragments by type
+    emotional = [f for f in fragments if f['type'] == 'emotional']
+    actions = [f for f in fragments if f['type'] == 'action']
+    concepts = [f for f in fragments if f['type'] == 'concept']
+    surreal = [f for f in fragments if f['type'] == 'surreal']
+    
+    # Create poem structure with surreal logic
+    poem_lines = []
+    
+    # Opening line - set the scene
+    if emotional:
+        poem_lines.append(f"In the {random.choice(emotional)['text']}")
+    else:
+        poem_lines.append("In the space between")
+    
+    # Action line
+    if actions:
+        poem_lines.append(f"where {random.choice(actions)['text']}")
+    elif concepts:
+        poem_lines.append(f"where {random.choice(concepts)['text']} dwells")
+    
+    # Surreal middle
+    if surreal:
+        poem_lines.append(f"{random.choice(surreal)['text']}")
+    elif concepts and len(concepts) > 1:
+        c1, c2 = random.sample(concepts, 2)
+        poem_lines.append(f"{c1['text']} becomes {c2['text']}")
+    
+    # Conceptual bridge
+    if concepts:
+        poem_lines.append(f"and {random.choice(concepts)['text']}")
+    
+    # Closing - return to emotion or action
+    if emotional and len(emotional) > 1:
+        closing = random.choice([f for f in emotional if f != emotional[0]])
+        poem_lines.append(f"dissolves into {closing['text']}")
+    elif actions:
+        poem_lines.append(f"continues to {random.choice(actions)['text']}")
+    else:
+        poem_lines.append("echoes in the machine")
+    
+    return '\n'.join(poem_lines)
 
 @socketio.on('disconnect')
 def handle_disconnect():

@@ -145,6 +145,108 @@
         to { opacity: 1; }
     }
     
+    .corpse-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: 40px;
+        text-align: center;
+    }
+    
+    .corpse-title {
+        font-size: 2.5rem;
+        color: var(--accent);
+        margin-bottom: 2rem;
+        font-family: 'JetBrains Mono', monospace;
+        letter-spacing: 3px;
+        animation: glitch 4s infinite;
+    }
+    
+    .corpse-poem {
+        font-size: 1.8rem;
+        line-height: 2.2;
+        color: var(--primary);
+        max-width: 600px;
+        margin-bottom: 3rem;
+        font-style: italic;
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+    }
+    
+    .corpse-fragments {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        justify-content: center;
+        max-width: 800px;
+        margin-bottom: 2rem;
+    }
+    
+    .fragment {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--primary);
+        padding: 8px 16px;
+        font-size: 0.9rem;
+        color: var(--primary);
+        border-radius: 20px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .fragment:hover {
+        background: var(--accent);
+        color: var(--secondary);
+        transform: scale(1.05);
+    }
+    
+    .fragment.emotional {
+        border-color: #ff6b6b;
+        color: #ff6b6b;
+    }
+    
+    .fragment.action {
+        border-color: #4ecdc4;
+        color: #4ecdc4;
+    }
+    
+    .fragment.concept {
+        border-color: #45b7d1;
+        color: #45b7d1;
+    }
+    
+    .fragment.surreal {
+        border-color: #f9ca24;
+        color: #f9ca24;
+    }
+    
+    .corpse-refresh {
+        background: none;
+        border: 2px solid var(--accent);
+        color: var(--accent);
+        padding: 12px 24px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: 'JetBrains Mono', monospace;
+        letter-spacing: 1px;
+    }
+    
+    .corpse-refresh:hover {
+        background: var(--accent);
+        color: var(--secondary);
+        transform: translate(-2px, -2px);
+        box-shadow: 2px 2px 0 var(--accent);
+    }
+    
+    .corpse-subtitle {
+        font-size: 1rem;
+        color: var(--muted);
+        margin-bottom: 1rem;
+        font-style: italic;
+    }
+    
     .network-node {
         cursor: pointer;
         will-change: transform;
@@ -236,6 +338,7 @@
         <button class="mode-btn active" onclick="setMode('wordcloud')">Words</button>
         <button class="mode-btn" onclick="setMode('network')">Network</button>
         <button class="mode-btn" onclick="setMode('flow')">Flow</button>
+        <button class="mode-btn" onclick="setMode('corpse')">Corpse</button>
     </div>
     
     <div class="viz-container">
@@ -322,6 +425,8 @@
             renderNetwork();
         } else if (mode === 'flow') {
             renderFlow();
+        } else if (mode === 'corpse') {
+            renderExquisiteCorpse();
         }
     }
     
@@ -583,6 +688,66 @@
 
         // Continuously generate new words
         flowInterval = setInterval(createFloatingWord, 1200);
+    }
+    
+    function renderExquisiteCorpse() {
+        const container = document.getElementById('wordcloud');
+        
+        // Show loading state
+        container.innerHTML = `
+            <div class="corpse-container">
+                <h2 class="corpse-title">EXQUISITE CORPSE</h2>
+                <p class="corpse-subtitle">Generating collective unconscious...</p>
+            </div>
+        `;
+        
+        fetch('/api/exquisite_corpse')
+            .then(response => response.json())
+            .then(data => {
+                container.innerHTML = `
+                    <div class="corpse-container">
+                        <h2 class="corpse-title">EXQUISITE CORPSE</h2>
+                        <p class="corpse-subtitle">A surreal poem born from visitor thoughts</p>
+                        
+                        <div class="corpse-poem">${data.poem.replace(/\n/g, '<br>')}</div>
+                        
+                        <div class="corpse-fragments">
+                            ${data.fragments.map(fragment => 
+                                `<span class="fragment ${fragment.type}" title="From: ${fragment.project}">${fragment.text}</span>`
+                            ).join('')}
+                        </div>
+                        
+                        <button class="corpse-refresh" onclick="renderExquisiteCorpse()">
+                            REGENERATE CORPSE
+                        </button>
+                    </div>
+                `;
+                
+                // Add click handlers to fragments
+                container.querySelectorAll('.fragment').forEach(fragment => {
+                    fragment.addEventListener('click', () => {
+                        fragment.style.animation = 'pulse 0.5s ease-in-out';
+                        setTimeout(() => {
+                            fragment.style.animation = '';
+                        }, 500);
+                    });
+                });
+            })
+            .catch(error => {
+                console.error('Corpse error:', error);
+                container.innerHTML = `
+                    <div class="corpse-container">
+                        <h2 class="corpse-title">EXQUISITE CORPSE</h2>
+                        <p class="corpse-subtitle">The collective unconscious is still forming...</p>
+                        <div class="corpse-poem">
+                            In the space between<br>
+                            thoughts gather<br>
+                            like digital moths<br>
+                            seeking light
+                        </div>
+                    </div>
+                `;
+            });
     }
 
     function addNewWords(content) {
