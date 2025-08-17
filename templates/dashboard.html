@@ -202,7 +202,7 @@
             document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
             
             // Add new words to visualization
-            addNewWords(data.content);
+            addNewWords(data);
         });
         
         // Refresh data every 30 seconds
@@ -224,7 +224,8 @@
                 } else if (currentMode === 'network') {
                     renderNetwork();
                 } else if (currentMode === 'flow') {
-                    renderFlow();
+                    const container = document.getElementById('wordcloud');
+                    container.innerHTML = '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--muted); font-size: 24px; font-style: italic;">Awaiting new thoughts...</div>';
                 }
             });
     }
@@ -246,7 +247,8 @@
         } else if (mode === 'network') {
             renderNetwork();
         } else if (mode === 'flow') {
-            renderFlow();
+            const container = document.getElementById('wordcloud');
+            container.innerHTML = '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--muted); font-size: 24px; font-style: italic;">Awaiting new thoughts...</div>';
         }
     }
     
@@ -402,125 +404,63 @@
             });
     }
     
-    function renderFlow() {
+    function addNewWords(data) {
         const container = document.getElementById('wordcloud');
-        const words = Object.entries(wordData);
         
-        if (words.length === 0) return;
+        if (currentMode === 'flow' && data.keywords && data.keywords.length > 0) {
+            container.innerHTML = ''; // Clear waiting message
+            const keywords = data.keywords;
 
-        const maxFreq = Math.max(...Object.values(wordData));
-        const numWords = words.length;
-
-        // Adjust parameters based on the number of unique words
-        const density = Math.min(numWords / 50, 1); // Normalize density (0 to 1, capped at 50 words)
-        
-        // Slower speed and larger words when there are fewer words
-        const baseDuration = 20000 + (1 - density) * 15000; // 20s to 35s
-        const durationVariance = 10000;
-        const baseSize = 24 + (1 - density) * 40; // 24px to 64px
-        const sizeVariance = 32;
-
-        // Lane system to prevent vertical overlap
-        const verticalMargin = 100; // Top and bottom margin
-        const avgWordHeight = baseSize * 1.2;
-        const numLanes = Math.max(1, Math.floor((window.innerHeight - verticalMargin * 2) / avgWordHeight));
-        const laneHeight = (window.innerHeight - verticalMargin * 2) / numLanes;
-        let nextLane = 0;
-
-        // Create persistent floating words that cycle through
-        const createFloatingWord = (word, freq, delay) => {
-            setTimeout(() => {
-                if (currentMode !== 'flow') return;
-
+            keywords.forEach((word, index) => {
                 const wordEl = document.createElement('div');
-                wordEl.className = 'word-node floating-word';
+                wordEl.className = 'word-node';
                 wordEl.textContent = word;
                 
-                const startX = -200;
-                const endX = window.innerWidth + 200;
-                
-                // Assign to a lane
-                const lane = nextLane % numLanes;
-                nextLane++;
-                const y = verticalMargin + (lane * laneHeight) + (Math.random() * laneHeight * 0.5 - laneHeight * 0.25);
-
-                const duration = baseDuration + Math.random() * durationVariance;
-                const size = baseSize + (freq / maxFreq) * sizeVariance;
+                // Start from random positions, invisible
+                const startX = Math.random() * window.innerWidth;
+                const startY = Math.random() * window.innerHeight;
                 
                 wordEl.style.cssText = `
+                    position: absolute;
                     left: ${startX}px;
-                    top: ${y}px;
-                    font-size: ${size}px;
-                    transition: all ${duration}ms linear;
-                    opacity: ${0.7 + (freq / maxFreq) * 0.3};
-                    font-weight: ${freq > maxFreq * 0.3 ? 'bold' : 'normal'};
-                    text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
-                    z-index: ${Math.floor(freq * 10)};
-                    white-space: nowrap;
+                    top: ${startY}px;
+                    font-size: ${24 + Math.random() * 24}px;
+                    color: var(--secondary);
+                    opacity: 0;
+                    transition: all 1.5s cubic-bezier(0.23, 1, 0.32, 1);
+                    transform: scale(0.5);
+                    font-weight: bold;
+                    text-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
                 `;
-                
                 container.appendChild(wordEl);
-                
-                // Start movement
+
+                // Animate in to form a poetic phrase
                 setTimeout(() => {
-                    wordEl.style.left = endX + 'px';
-                    wordEl.style.transform = `rotate(${Math.random() * 4 - 2}deg)`;
-                }, 100);
-                
-                // Remove and recreate for continuous flow
+                    const targetX = window.innerWidth / 2 + (index - keywords.length / 2) * 120 + (Math.random() - 0.5) * 50;
+                    const targetY = window.innerHeight / 2 + (Math.random() - 0.5) * 80;
+                    wordEl.style.opacity = '1';
+                    wordEl.style.transform = 'scale(1)';
+                    wordEl.style.left = `${targetX}px`;
+                    wordEl.style.top = `${targetY}px`;
+                }, 100 + index * 150);
+
+                // Hold, then animate out
+                setTimeout(() => {
+                    wordEl.style.opacity = '0';
+                    wordEl.style.transform = 'scale(0.2) rotate(' + (Math.random() * 40 - 20) + 'deg)';
+                }, 6000 + index * 100);
+
+                // Remove from DOM and restore waiting message
                 setTimeout(() => {
                     wordEl.remove();
-                    if (currentMode === 'flow') {
-                        createFloatingWord(word, freq, 0);
+                    if (index === keywords.length - 1) {
+                         container.innerHTML = '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--muted); font-size: 24px; font-style: italic;">Awaiting new thoughts...</div>';
                     }
-                }, duration + 100);
-            }, delay);
-        };
-        
-        // Adjust stagger based on density to prevent initial clumping
-        const staggerDelay = Math.max(200, 1500 - (density * 1300));
-
-        // Start continuous flow for each word
-        words.forEach(([word, freq], index) => {
-            createFloatingWord(word, freq, index * staggerDelay);
-        });
-    }
-    
-    function addNewWords(content) {
-        const words = content.split(' ').slice(0, 5);
-        const container = document.getElementById('wordcloud');
-        
-        if (currentMode === 'flow') {
-            words.forEach((word, index) => {
-                setTimeout(() => {
-                    const wordEl = document.createElement('div');
-                    wordEl.className = 'word-node';
-                    wordEl.textContent = word;
-                    wordEl.style.cssText = `
-                        left: ${Math.random() * window.innerWidth}px;
-                        top: ${window.innerHeight}px;
-                        font-size: 36px;
-                        color: var(--accent);
-                        transition: all 4s ease-out;
-                        font-weight: bold;
-                        text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
-                    `;
-                    
-                    container.appendChild(wordEl);
-                    
-                    setTimeout(() => {
-                        wordEl.style.top = '-100px';
-                        wordEl.style.opacity = '0';
-                        wordEl.style.transform = `rotate(${Math.random() * 30 - 15}deg)`;
-                    }, 100);
-                    
-                    setTimeout(() => {
-                        wordEl.remove();
-                    }, 4100);
-                }, index * 200);
+                }, 8000);
             });
+
         } else if (currentMode === 'network') {
-            // Add pulsing effect to existing network
+            // Add pulsing effect to existing network on new feedback
             const existingWords = container.querySelectorAll('.word-node');
             existingWords.forEach(wordEl => {
                 wordEl.style.animation = 'pulse 1s ease-in-out';
