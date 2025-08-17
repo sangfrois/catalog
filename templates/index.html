@@ -404,6 +404,7 @@
     </div>
     
     <div class="project-preview" id="projectPreview">
+        <img id="previewThumb" src="" alt="" style="width: 100%; height: 120px; object-fit: cover; margin-bottom: 10px; border: 1px solid var(--primary);">
         <h3 id="previewTitle"></h3>
         <p class="mono muted" id="previewArtist"></p>
         <p id="previewDesc"></p>
@@ -470,6 +471,8 @@
         const project = projects[projectId];
         const preview = document.getElementById('projectPreview');
         
+        document.getElementById('previewThumb').src = `/img/${project.thumb}`;
+        document.getElementById('previewThumb').alt = project.title;
         document.getElementById('previewTitle').textContent = project.title;
         document.getElementById('previewArtist').textContent = project.artist;
         document.getElementById('previewDesc').textContent = project.desc.substring(0, 150) + '...';

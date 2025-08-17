@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_socketio import SocketIO, emit
 import sqlite3
 import os
@@ -113,6 +113,10 @@ PROJECTS = {
         'position': {'x': 15, 'y': 25}
     }
 }
+
+@app.route('/img/<filename>')
+def serve_image(filename):
+    return send_from_directory('img', filename)
 
 @app.route('/')
 def index():
