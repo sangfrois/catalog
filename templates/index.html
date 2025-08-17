@@ -473,13 +473,18 @@
         transition: filter 0.3s ease;
     }
     .logo-container img:hover {
-        filter: grayscale(0%) brightness(1);
+        filter: none;
     }
-    .logo-container img[src*="milieux.png"] {
+    .logo-container img[src*="milieux.png"],
+    .logo-container img[src*="concordia.png"] {
         filter: invert(1) grayscale(100%) brightness(1.5);
     }
-    .logo-container img[src*="milieux.png"]:hover {
-        filter: invert(1) grayscale(0%) brightness(1);
+    .logo-container img[src*="milieux.png"]:hover,
+    .logo-container img[src*="concordia.png"]:hover {
+        filter: invert(1) grayscale(0%);
+    }
+    .logo-container img[src*="AppliedAI.png"] {
+        filter: invert(1) grayscale(1);
     }
 </style>
 {% endblock %}
