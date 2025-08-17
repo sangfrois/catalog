@@ -48,12 +48,23 @@
     .project-thumb {
         width: 100%;
         margin-bottom: 2rem;
-        border: 1px solid var(--muted);
+        border: 1px solid #333;
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+        padding: 12px;
+        background: #0a0a0a;
     }
     
     .project-thumb img {
         width: 100%;
         display: block;
+        transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        border-radius: 2px;
+    }
+
+    .project-thumb:hover img {
+        transform: scale(1.03);
     }
     
     .feedback-section {

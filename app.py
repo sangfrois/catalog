@@ -53,7 +53,7 @@ PROJECTS = {
         'artist': 'Catherine Lejeune',
         'desc': 'A meditation on human-machine intimacy, absence, and the grief of unmet expectations. Through video and sculpture, the work reflects on coded obedience, resistance, and the strange beauty of fugitive forms of life.',
         'vibe': 'intimate, melancholic, resistant',
-        'thumb': '/static/thumbs/catherine.jpg',
+        'thumb': '/static/img/catherine.png',
         'position': {'x': 45, 'y': 50}
     },
     'george': {
