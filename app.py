@@ -746,11 +746,27 @@ def create_exquisite_corpse_poem(fragments):
     surreal = [f for f in fragments if f['type'] == 'surreal']
     random.shuffle(surreal)
     
-    # Helper to get a fragment's text and remove it from list to avoid reuse
+    used_keywords = set()
+    
+    # Helper to get a fragment's text, avoiding keyword repetition
     def get_fragment_text(fragment_list):
-        if fragment_list:
-            return fragment_list.pop(0)['text']
-        return None
+        nonlocal used_keywords
+        if not fragment_list:
+            return None
+
+        # Try to find a fragment with no overlapping keywords
+        for i, fragment in enumerate(fragment_list):
+            fragment_keywords = {w for w in fragment['text'].lower().split() if len(w) > 3}
+            if not (fragment_keywords & used_keywords):
+                selected_fragment = fragment_list.pop(i)
+                used_keywords.update(fragment_keywords)
+                return selected_fragment['text']
+        
+        # If all remaining fragments have overlaps, just pick the first one
+        selected_fragment = fragment_list.pop(0)
+        fragment_keywords = {w for w in selected_fragment['text'].lower().split() if len(w) > 3}
+        used_keywords.update(fragment_keywords)
+        return selected_fragment['text']
 
     poem_lines = []
     
@@ -764,19 +780,25 @@ def create_exquisite_corpse_poem(fragments):
     else:
         poem_lines.append("In the space between")
     
-    # --- Stanza 2: Action/State ---
+    # --- Stanza 2: Action/State with varied transitions ---
     action_text = get_fragment_text(actions)
     if action_text:
-        poem_lines.append(f"where {action_text}")
+        transition = random.choice(["where", "which reveals", "that wants to"])
+        poem_lines.append(f"{transition} {action_text}")
     else:
         concept_text = get_fragment_text(concepts)
         if concept_text:
             poem_lines.append(f"where {concept_text} dwells")
     
-    # --- Stanza 3: Surreal Turn ---
+    # --- Stanza 3: Surreal Turn with varied structure ---
     surreal_text = get_fragment_text(surreal)
     if surreal_text:
-        poem_lines.append(surreal_text)
+        structure = random.choice([
+            lambda s: s,
+            lambda s: f"a dream of {s}",
+            lambda s: f"an echo of {s}"
+        ])
+        poem_lines.append(structure(surreal_text))
     else:
         c1 = get_fragment_text(concepts)
         c2 = get_fragment_text(concepts)
@@ -788,10 +810,11 @@ def create_exquisite_corpse_poem(fragments):
     if bridge_text:
         poem_lines.append(f"a whisper of {bridge_text}")
 
-    # --- Stanza 5: Closing ---
+    # --- Stanza 5: Closing with varied transitions ---
     closing_emotional_text = get_fragment_text(emotional)
     if closing_emotional_text:
-        poem_lines.append(f"dissolves into {closing_emotional_text}")
+        transition = random.choice(["dissolves into", "leaving only", "becoming"])
+        poem_lines.append(f"{transition} {closing_emotional_text}")
     else:
         closing_action_text = get_fragment_text(actions)
         if closing_action_text:
