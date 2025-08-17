@@ -43,6 +43,44 @@
         font-size: 1.1rem;
         line-height: 1.8;
         margin-bottom: 2rem;
+        font-family: 'Helvetica Neue', sans-serif;
+    }
+    .project-desc p {
+        line-height: 1.7;
+        margin-bottom: 2em;
+        font-size: 1.1rem;
+        color: var(--muted);
+    }
+    .project-desc .lead-paragraph {
+        font-size: 1.4rem;
+        color: var(--primary);
+        font-weight: 300;
+        letter-spacing: 0.5px;
+    }
+    .project-desc .pull-quote {
+        font-size: 1.8rem;
+        font-family: 'Times New Roman', serif;
+        font-style: italic;
+        color: var(--accent);
+        text-align: center;
+        margin: 3rem 0;
+        padding: 1rem;
+        border-top: 1px solid var(--muted);
+        border-bottom: 1px solid var(--muted);
+        line-height: 1.4;
+    }
+    .project-desc .highlight-text {
+        color: var(--accent);
+        font-family: 'JetBrains Mono', monospace;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 2px 5px;
+    }
+    .project-desc blockquote {
+        font-style: italic;
+        color: var(--muted);
+        margin: 2rem 0;
+        padding-left: 1.5rem;
+        border-left: 2px solid var(--accent);
     }
     
     .project-thumb {
@@ -206,7 +244,7 @@
             <img src="{{ url_for('static', filename='img/' + project.thumb) }}" alt="{{ project.title }}">
         </div>
         
-        <p class="project-desc">{{ project.desc }}</p>
+        <div class="project-desc">{{ project.desc | safe }}</div>
     </div>
     
     <div class="feedback-section">
