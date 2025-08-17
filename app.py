@@ -191,37 +191,147 @@ def get_wordcloud():
     texts = [row[0] for row in c.fetchall()]
     conn.close()
     
-    # Simple word frequency
-    words = []
+    if not texts:
+        return jsonify({})
+    
+    # Use enhanced bilingual processing
+    all_keywords = []
     for text in texts:
-        words.extend(re.findall(r'\b\w+\b', text.lower()))
+        keywords = process_text_bilingual(text)
+        all_keywords.extend(keywords)
     
-    word_freq = Counter(words)
-    # Filter out common words
-    stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them'}
+    # Count frequency and apply minimum threshold
+    word_freq = Counter(all_keywords)
     
+    # Filter words that appear at least once and are meaningful
+    min_freq = 1
     filtered_words = {word: freq for word, freq in word_freq.items() 
-                     if word not in stop_words and len(word) > 2}
+                     if freq >= min_freq and len(word) >= 3}
+    
+    # If we have too many words, keep only the most frequent ones
+    if len(filtered_words) > 100:
+        filtered_words = dict(Counter(filtered_words).most_common(100))
     
     return jsonify(filtered_words)
 
 def process_text_bilingual(text):
-    """Detects language and extracts keywords using the appropriate model."""
+    """Enhanced bilingual text processing with domain-specific filtering."""
     try:
         lang = detect(text)
     except LangDetectException:
         lang = 'en' # Default to English if detection fails
 
     nlp = nlp_fr if lang == 'fr' else nlp_en
-
     doc = nlp(text)
-    keywords = [
-        token.lemma_.lower() for token in doc 
-        if token.pos_ in ['NOUN', 'PROPN', 'ADJ', 'VERB'] 
-        and not token.is_stop 
-        and len(token.lemma_) > 2
-    ]
-    return list(set(keywords))
+    
+    # Enhanced stop words for art/tech context
+    art_tech_stopwords = {
+        'en': {'thing', 'things', 'something', 'anything', 'everything', 'nothing', 
+               'way', 'ways', 'time', 'times', 'work', 'works', 'piece', 'pieces',
+               'part', 'parts', 'kind', 'kinds', 'sort', 'sorts', 'type', 'types',
+               'lot', 'lots', 'bit', 'bits', 'much', 'many', 'some', 'any', 'all',
+               'really', 'very', 'quite', 'pretty', 'rather', 'just', 'only',
+               'also', 'even', 'still', 'already', 'yet', 'again', 'back',
+               'here', 'there', 'where', 'when', 'how', 'why', 'what', 'who',
+               'make', 'makes', 'making', 'made', 'get', 'gets', 'getting', 'got',
+               'go', 'goes', 'going', 'went', 'come', 'comes', 'coming', 'came',
+               'see', 'sees', 'seeing', 'saw', 'look', 'looks', 'looking', 'looked',
+               'know', 'knows', 'knowing', 'knew', 'think', 'thinks', 'thinking', 'thought',
+               'feel', 'feels', 'feeling', 'felt', 'seem', 'seems', 'seeming', 'seemed'},
+        'fr': {'chose', 'choses', 'quelque', 'quelques', 'tout', 'tous', 'toute', 'toutes',
+               'façon', 'façons', 'manière', 'manières', 'temps', 'fois', 'travail',
+               'œuvre', 'œuvres', 'partie', 'parties', 'sorte', 'sortes', 'type', 'types',
+               'beaucoup', 'peu', 'assez', 'très', 'vraiment', 'plutôt', 'juste',
+               'seulement', 'aussi', 'encore', 'déjà', 'toujours', 'jamais',
+               'ici', 'là', 'où', 'quand', 'comment', 'pourquoi', 'quoi', 'qui',
+               'faire', 'fait', 'faisant', 'avoir', 'être', 'aller', 'venir',
+               'voir', 'regarder', 'savoir', 'connaître', 'penser', 'croire',
+               'sentir', 'ressentir', 'sembler', 'paraître'}
+    }
+    
+    # Domain-specific important terms to preserve
+    domain_terms = {
+        'ai', 'artificial', 'intelligence', 'machine', 'algorithm', 'digital', 'data',
+        'interactive', 'installation', 'virtual', 'augmented', 'reality', 'vr', 'ar',
+        'neural', 'network', 'learning', 'deep', 'model', 'training', 'dataset',
+        'human', 'emotion', 'feeling', 'experience', 'perception', 'consciousness',
+        'memory', 'dream', 'imagination', 'creativity', 'expression', 'meaning',
+        'art', 'artistic', 'aesthetic', 'beauty', 'sublime', 'uncanny', 'surreal',
+        'technology', 'tech', 'cyber', 'digital', 'electronic', 'computational',
+        'interface', 'interaction', 'encounter', 'relationship', 'connection',
+        'future', 'past', 'present', 'temporal', 'time', 'space', 'dimension',
+        'body', 'embodiment', 'physical', 'material', 'immaterial', 'virtual',
+        'surveillance', 'privacy', 'control', 'power', 'agency', 'autonomy',
+        'collective', 'individual', 'social', 'cultural', 'political', 'ethical',
+        'transformation', 'change', 'evolution', 'emergence', 'becoming',
+        'threshold', 'liminal', 'boundary', 'edge', 'margin', 'between'
+    }
+    
+    # Extract meaningful tokens
+    keywords = []
+    current_stopwords = art_tech_stopwords.get(lang, art_tech_stopwords['en'])
+    
+    for token in doc:
+        # Skip if it's punctuation, space, or too short
+        if token.is_punct or token.is_space or len(token.text) < 3:
+            continue
+            
+        # Get lemmatized form
+        lemma = token.lemma_.lower().strip()
+        
+        # Skip if empty after processing
+        if not lemma or len(lemma) < 3:
+            continue
+            
+        # Include if it's a domain-specific term (override other filters)
+        if lemma in domain_terms or token.text.lower() in domain_terms:
+            keywords.append(lemma)
+            continue
+            
+        # Skip common stop words and domain-specific noise
+        if (token.is_stop or 
+            lemma in current_stopwords or 
+            token.text.lower() in current_stopwords):
+            continue
+            
+        # Include meaningful parts of speech
+        if token.pos_ in ['NOUN', 'PROPN', 'ADJ', 'VERB']:
+            # Additional filtering for verbs - keep only meaningful ones
+            if token.pos_ == 'VERB':
+                # Skip auxiliary and modal verbs
+                if token.tag_ in ['MD', 'AUX'] or lemma in {'be', 'have', 'do', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can'}:
+                    continue
+                # Skip very common verbs unless they're domain-relevant
+                common_verbs = {'say', 'tell', 'ask', 'give', 'take', 'put', 'get', 'make', 'go', 'come', 'see', 'look', 'know', 'think', 'want', 'need', 'try', 'use', 'find', 'keep', 'let', 'help', 'show', 'move', 'play', 'turn', 'start', 'stop', 'run', 'walk', 'sit', 'stand', 'hold', 'bring', 'leave', 'happen', 'become', 'seem', 'appear'}
+                if lemma in common_verbs and lemma not in domain_terms:
+                    continue
+                    
+            # Additional filtering for adjectives - keep descriptive ones
+            if token.pos_ == 'ADJ':
+                # Skip very basic adjectives unless domain-relevant
+                basic_adjectives = {'good', 'bad', 'big', 'small', 'old', 'new', 'long', 'short', 'high', 'low', 'right', 'wrong', 'different', 'same', 'other', 'another', 'such', 'own', 'sure', 'able', 'free', 'full', 'hard', 'easy', 'clear', 'simple', 'real', 'true', 'false', 'open', 'close', 'ready', 'sorry', 'happy', 'sad'}
+                if lemma in basic_adjectives and lemma not in domain_terms:
+                    continue
+                    
+            # Skip single characters and numbers
+            if len(lemma) == 1 or lemma.isdigit():
+                continue
+                
+            # Skip if it's mostly punctuation
+            if len([c for c in lemma if c.isalpha()]) < len(lemma) * 0.7:
+                continue
+                
+            keywords.append(lemma)
+    
+    # Remove duplicates while preserving order
+    seen = set()
+    unique_keywords = []
+    for keyword in keywords:
+        if keyword not in seen:
+            seen.add(keyword)
+            unique_keywords.append(keyword)
+    
+    return unique_keywords
 
 @app.route('/api/word_network')
 def get_word_network():
@@ -429,7 +539,7 @@ def handle_connect():
     print('Client connected')
 
 def generate_poetic_fragments(feedback_data):
-    """Generate poetic fragments through creative language manipulation."""
+    """Generate poetic fragments through enhanced creative language manipulation."""
     fragments = []
     
     for entry in feedback_data:
@@ -445,81 +555,162 @@ def generate_poetic_fragments(feedback_data):
         nlp = nlp_fr if lang == 'fr' else nlp_en
         doc = nlp(text)
         
-        # Extract different types of poetic elements
+        # Extract different types of poetic elements with enhanced filtering
         
-        # 1. Emotional phrases (adjective + noun combinations)
+        # 1. Emotional phrases (meaningful noun chunks with descriptive elements)
         emotional_phrases = []
         for chunk in doc.noun_chunks:
-            if len(chunk) <= 4:  # Keep it concise
-                emotional_phrases.append(chunk.text.lower().strip())
+            chunk_text = chunk.text.lower().strip()
+            # Filter out generic phrases
+            if (len(chunk.text.split()) <= 4 and 
+                len(chunk_text) > 5 and
+                not any(generic in chunk_text for generic in ['this thing', 'that thing', 'the way', 'the time', 'the work'])):
+                # Check if it contains meaningful adjectives or descriptive nouns
+                has_meaningful_content = any(token.pos_ in ['ADJ', 'NOUN'] and 
+                                           not token.is_stop and 
+                                           len(token.lemma_) > 3 
+                                           for token in chunk)
+                if has_meaningful_content:
+                    emotional_phrases.append(chunk_text)
         
-        # 2. Action fragments (verb phrases)
+        # 2. Action fragments (meaningful verb phrases)
         action_fragments = []
         for token in doc:
-            if token.pos_ == 'VERB' and not token.is_stop:
-                # Get verb with its immediate context
+            if (token.pos_ == 'VERB' and 
+                not token.is_stop and 
+                token.lemma_ not in ['be', 'have', 'do', 'get', 'make', 'go', 'come', 'see', 'know', 'think']):
+                
+                # Build verb phrase with meaningful context
                 verb_phrase = []
+                
+                # Add meaningful adverbs or particles
                 for child in token.children:
-                    if child.pos_ in ['ADV', 'PART']:  # Adverbs and particles
-                        verb_phrase.append(child.text)
-                verb_phrase.append(token.lemma_)
-                if len(verb_phrase) <= 3:
+                    if (child.pos_ in ['ADV', 'PART'] and 
+                        not child.is_stop and 
+                        len(child.text) > 2):
+                        verb_phrase.append(child.text.lower())
+                
+                verb_phrase.append(token.lemma_.lower())
+                
+                # Add meaningful objects or complements
+                for child in token.children:
+                    if (child.pos_ in ['NOUN', 'PROPN'] and 
+                        not child.is_stop and 
+                        len(child.text) > 3):
+                        verb_phrase.append(child.text.lower())
+                        break  # Only add one object to keep it concise
+                
+                if len(verb_phrase) <= 4 and len(' '.join(verb_phrase)) > 4:
                     action_fragments.append(' '.join(verb_phrase))
         
-        # 3. Conceptual bridges (meaningful single words)
+        # 3. Enhanced conceptual bridges (domain-relevant meaningful words)
         concepts = []
-        for token in doc:
-            if (token.pos_ in ['NOUN', 'ADJ'] and 
-                not token.is_stop and 
-                len(token.text) > 3 and
-                token.text.lower() not in ['thing', 'things', 'something']):
-                concepts.append(token.lemma_.lower())
+        processed_keywords = process_text_bilingual(text)
         
-        # 4. Surreal combinations (unexpected word pairs)
+        # Prioritize domain-specific and emotionally resonant concepts
+        priority_concepts = []
+        regular_concepts = []
+        
+        for keyword in processed_keywords:
+            # Check if it's a high-value concept for art/tech context
+            if any(domain_term in keyword for domain_term in [
+                'ai', 'artificial', 'machine', 'digital', 'virtual', 'reality',
+                'human', 'emotion', 'feeling', 'experience', 'consciousness',
+                'art', 'creative', 'aesthetic', 'beauty', 'expression',
+                'technology', 'interaction', 'interface', 'connection',
+                'future', 'memory', 'dream', 'imagination', 'transformation'
+            ]):
+                priority_concepts.append(keyword)
+            elif len(keyword) > 4:  # Longer words tend to be more specific
+                regular_concepts.append(keyword)
+        
+        # Combine with priority given to domain concepts
+        concepts = priority_concepts[:3] + regular_concepts[:2]
+        
+        # 4. Enhanced surreal combinations (meaningful unexpected pairings)
         surreal_pairs = []
-        tokens = [t for t in doc if not t.is_stop and t.pos_ in ['NOUN', 'ADJ', 'VERB']]
-        for i in range(len(tokens) - 1):
-            if tokens[i].pos_ != tokens[i+1].pos_:  # Different parts of speech
-                pair = f"{tokens[i].lemma_.lower()} {tokens[i+1].lemma_.lower()}"
-                surreal_pairs.append(pair)
+        meaningful_tokens = [t for t in doc if (
+            not t.is_stop and 
+            t.pos_ in ['NOUN', 'ADJ', 'VERB'] and 
+            len(t.lemma_) > 3 and
+            t.lemma_.lower() not in ['thing', 'way', 'time', 'work', 'make', 'get', 'go', 'see', 'know']
+        )]
         
-        # Add fragments with metadata
-        for phrase in emotional_phrases[:2]:  # Limit to avoid spam
-            fragments.append({
-                'text': phrase,
-                'type': 'emotional',
-                'project': project,
-                'source': 'visitor reflection'
-            })
+        for i in range(len(meaningful_tokens) - 1):
+            token1, token2 = meaningful_tokens[i], meaningful_tokens[i+1]
+            # Create surreal pairs from different parts of speech
+            if (token1.pos_ != token2.pos_ and 
+                not (token1.pos_ == 'VERB' and token2.pos_ == 'NOUN')):  # Avoid common verb-noun pairs
+                pair = f"{token1.lemma_.lower()} {token2.lemma_.lower()}"
+                if len(pair) > 8:  # Ensure meaningful length
+                    surreal_pairs.append(pair)
         
-        for action in action_fragments[:1]:
-            fragments.append({
-                'text': action,
-                'type': 'action',
-                'project': project,
-                'source': 'visitor reflection'
-            })
+        # Add fragments with enhanced filtering
+        for phrase in emotional_phrases[:2]:
+            if len(phrase) > 6:  # Ensure substantial content
+                fragments.append({
+                    'text': phrase,
+                    'type': 'emotional',
+                    'project': project,
+                    'source': 'visitor reflection'
+                })
         
-        for concept in concepts[:2]:
-            fragments.append({
-                'text': concept,
-                'type': 'concept',
-                'project': project,
-                'source': 'visitor reflection'
-            })
+        for action in action_fragments[:2]:
+            if len(action) > 4:
+                fragments.append({
+                    'text': action,
+                    'type': 'action',
+                    'project': project,
+                    'source': 'visitor reflection'
+                })
         
-        for pair in surreal_pairs[:1]:
-            fragments.append({
-                'text': pair,
-                'type': 'surreal',
-                'project': project,
-                'source': 'visitor reflection'
-            })
+        for concept in concepts[:3]:
+            if len(concept) > 3:
+                fragments.append({
+                    'text': concept,
+                    'type': 'concept',
+                    'project': project,
+                    'source': 'visitor reflection'
+                })
+        
+        for pair in surreal_pairs[:2]:
+            if len(pair) > 8:
+                fragments.append({
+                    'text': pair,
+                    'type': 'surreal',
+                    'project': project,
+                    'source': 'visitor reflection'
+                })
     
-    # Shuffle and limit fragments
+    # Enhanced filtering and shuffling
     import random
-    random.shuffle(fragments)
-    return fragments[:30]
+    
+    # Remove duplicates while preserving variety
+    unique_fragments = []
+    seen_texts = set()
+    
+    for fragment in fragments:
+        if fragment['text'] not in seen_texts:
+            seen_texts.add(fragment['text'])
+            unique_fragments.append(fragment)
+    
+    # Shuffle and ensure good type distribution
+    random.shuffle(unique_fragments)
+    
+    # Ensure we have a good mix of fragment types
+    type_counts = {'emotional': 0, 'action': 0, 'concept': 0, 'surreal': 0}
+    balanced_fragments = []
+    
+    for fragment in unique_fragments:
+        ftype = fragment['type']
+        if type_counts[ftype] < 8:  # Max 8 of each type
+            balanced_fragments.append(fragment)
+            type_counts[ftype] += 1
+        
+        if len(balanced_fragments) >= 30:
+            break
+    
+    return balanced_fragments
 
 def create_exquisite_corpse_poem(fragments):
     """Create a surreal exquisite corpse poem from fragments."""
