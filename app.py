@@ -146,16 +146,11 @@ def feedback():
         conn.commit()
         conn.close()
         
-        # Process for keywords
-        keywords = process_text_bilingual(content)
-        generative_words = keywords[:5]
-
         # Emit to dashboard
         socketio.emit('new_feedback', {
             'project': project, 
             'content': content,
-            'timestamp': datetime.now().isoformat(),
-            'keywords': generative_words
+            'timestamp': datetime.now().isoformat()
         })
         return jsonify({"status": "ok"})
     return jsonify({"status": "error"}), 400

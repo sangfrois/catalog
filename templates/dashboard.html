@@ -136,7 +136,13 @@
     
     .floating-word {
         pointer-events: none;
-        will-change: transform, left;
+        will-change: transform, left, top, opacity;
+        opacity: 0;
+        animation: fadeIn 1s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+        to { opacity: 1; }
     }
     
     .network-node {
@@ -188,6 +194,7 @@
     let currentMode = 'wordcloud';
     let wordData = {};
     let thoughtCount = 0;
+    let flowInterval = null;
     
     // Initialize visualization
     initDashboard();
@@ -202,7 +209,7 @@
             document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
             
             // Add new words to visualization
-            addNewWords(data);
+            addNewWords(data.content);
         });
         
         // Refresh data every 30 seconds
@@ -224,13 +231,16 @@
                 } else if (currentMode === 'network') {
                     renderNetwork();
                 } else if (currentMode === 'flow') {
-                    const container = document.getElementById('wordcloud');
-                    container.innerHTML = '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--muted); font-size: 24px; font-style: italic;">Awaiting new thoughts...</div>';
+                    renderFlow();
                 }
             });
     }
     
     function setMode(mode) {
+        if (flowInterval) {
+            clearInterval(flowInterval);
+            flowInterval = null;
+        }
         currentMode = mode;
         
         // Update button states
@@ -247,8 +257,7 @@
         } else if (mode === 'network') {
             renderNetwork();
         } else if (mode === 'flow') {
-            const container = document.getElementById('wordcloud');
-            container.innerHTML = '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--muted); font-size: 24px; font-style: italic;">Awaiting new thoughts...</div>';
+            renderFlow();
         }
     }
     
@@ -404,62 +413,112 @@
             });
     }
     
-    function addNewWords(data) {
+    function renderFlow() {
+        if (flowInterval) {
+            clearInterval(flowInterval);
+        }
+        const container = document.getElementById('wordcloud');
+        const words = Object.entries(wordData).sort(() => 0.5 - Math.random()); // Shuffle for variety
+        if (words.length === 0) return;
+        const maxFreq = Math.max(...Object.values(wordData));
+
+        const laneCount = 10; // Number of invisible lanes to prevent overlap
+        let horizontalLanes = new Array(laneCount).fill(false);
+        let verticalLanes = new Array(laneCount).fill(false);
+
+        let wordIndex = 0;
+
+        const createFloatingWord = () => {
+            if (words.length === 0) return;
+            if (wordIndex >= words.length) {
+                wordIndex = 0; // Loop back to the start
+            }
+            const [word, freq] = words[wordIndex];
+            wordIndex++;
+
+            const direction = Math.random() > 0.5 ? 'horizontal' : 'vertical';
+            let laneIndex = -1;
+
+            if (direction === 'horizontal') {
+                const availableLanes = horizontalLanes.map((occupied, i) => occupied ? -1 : i).filter(i => i !== -1);
+                if (availableLanes.length === 0) return; // No lanes available, wait
+                laneIndex = availableLanes[Math.floor(Math.random() * availableLanes.length)];
+                horizontalLanes[laneIndex] = true;
+            } else {
+                const availableLanes = verticalLanes.map((occupied, i) => occupied ? -1 : i).filter(i => i !== -1);
+                if (availableLanes.length === 0) return; // No lanes available, wait
+                laneIndex = availableLanes[Math.floor(Math.random() * availableLanes.length)];
+                verticalLanes[laneIndex] = true;
+            }
+
+            const wordEl = document.createElement('div');
+            wordEl.className = 'word-node floating-word';
+            wordEl.textContent = word;
+            container.appendChild(wordEl);
+
+            const isForeground = Math.random() > 0.6;
+            const size = isForeground ? 24 + (freq / maxFreq) * 48 : 12 + (freq / maxFreq) * 24;
+            const duration = isForeground ? 10000 + Math.random() * 5000 : 20000 + Math.random() * 10000;
+            const opacity = isForeground ? 0.9 : 0.5;
+            const blur = isForeground ? 'none' : 'blur(1px)';
+            
+            let startX, startY, endX, endY;
+
+            if (direction === 'horizontal') {
+                startY = (window.innerHeight / laneCount) * laneIndex + (window.innerHeight / (laneCount * 2));
+                endY = startY;
+                if (Math.random() > 0.5) { // Left to Right
+                    startX = -200;
+                    endX = window.innerWidth + 200;
+                } else { // Right to Left
+                    startX = window.innerWidth + 200;
+                    endX = -200;
+                }
+            } else { // Vertical
+                startX = (window.innerWidth / laneCount) * laneIndex + (window.innerWidth / (laneCount * 2));
+                endX = startX;
+                // For vertical, we only do top to bottom for a more "thought rain" feel
+                startY = -100;
+                endY = window.innerHeight + 100;
+            }
+
+            wordEl.style.cssText = `
+                left: ${startX}px;
+                top: ${startY}px;
+                font-size: ${size}px;
+                opacity: 0;
+                transition: transform ${duration}ms linear, opacity 1s;
+                font-weight: ${isForeground ? '600' : 'normal'};
+                text-shadow: ${isForeground ? '0 0 10px rgba(0, 255, 136, 0.3)' : 'none'};
+                filter: ${blur};
+                color: var(--secondary);
+            `;
+
+            // Start movement
+            setTimeout(() => {
+                wordEl.style.opacity = opacity;
+                wordEl.style.transform = `translate(${endX - startX}px, ${endY - startY}px)`;
+            }, 100);
+
+            // Free up the lane after the word has finished its course
+            setTimeout(() => {
+                wordEl.remove();
+                if (direction === 'horizontal') {
+                    horizontalLanes[laneIndex] = false;
+                } else {
+                    verticalLanes[laneIndex] = false;
+                }
+            }, duration + 1000);
+        };
+
+        // Continuously generate new words
+        flowInterval = setInterval(createFloatingWord, 700);
+    }
+
+    function addNewWords(content) {
         const container = document.getElementById('wordcloud');
         
-        if (currentMode === 'flow' && data.keywords && data.keywords.length > 0) {
-            container.innerHTML = ''; // Clear waiting message
-            const keywords = data.keywords;
-
-            keywords.forEach((word, index) => {
-                const wordEl = document.createElement('div');
-                wordEl.className = 'word-node';
-                wordEl.textContent = word;
-                
-                // Start from random positions, invisible
-                const startX = Math.random() * window.innerWidth;
-                const startY = Math.random() * window.innerHeight;
-                
-                wordEl.style.cssText = `
-                    position: absolute;
-                    left: ${startX}px;
-                    top: ${startY}px;
-                    font-size: ${24 + Math.random() * 24}px;
-                    color: var(--secondary);
-                    opacity: 0;
-                    transition: all 1.5s cubic-bezier(0.23, 1, 0.32, 1);
-                    transform: scale(0.5);
-                    font-weight: bold;
-                    text-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
-                `;
-                container.appendChild(wordEl);
-
-                // Animate in to form a poetic phrase
-                setTimeout(() => {
-                    const targetX = window.innerWidth / 2 + (index - keywords.length / 2) * 120 + (Math.random() - 0.5) * 50;
-                    const targetY = window.innerHeight / 2 + (Math.random() - 0.5) * 80;
-                    wordEl.style.opacity = '1';
-                    wordEl.style.transform = 'scale(1)';
-                    wordEl.style.left = `${targetX}px`;
-                    wordEl.style.top = `${targetY}px`;
-                }, 100 + index * 150);
-
-                // Hold, then animate out
-                setTimeout(() => {
-                    wordEl.style.opacity = '0';
-                    wordEl.style.transform = 'scale(0.2) rotate(' + (Math.random() * 40 - 20) + 'deg)';
-                }, 6000 + index * 100);
-
-                // Remove from DOM and restore waiting message
-                setTimeout(() => {
-                    wordEl.remove();
-                    if (index === keywords.length - 1) {
-                         container.innerHTML = '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--muted); font-size: 24px; font-style: italic;">Awaiting new thoughts...</div>';
-                    }
-                }, 8000);
-            });
-
-        } else if (currentMode === 'network') {
+        if (currentMode === 'network') {
             // Add pulsing effect to existing network on new feedback
             const existingWords = container.querySelectorAll('.word-node');
             existingWords.forEach(wordEl => {
