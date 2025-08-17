@@ -272,6 +272,45 @@
         background: rgba(0, 255, 136, 0.1);
         letter-spacing: 1px;
     }
+
+    .project-list {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 15px 20px;
+        border: 1px solid var(--primary);
+        z-index: 10;
+        max-width: 250px;
+    }
+
+    .project-list h3 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        font-family: 'JetBrains Mono', monospace;
+        color: var(--primary);
+        font-size: 1rem;
+    }
+
+    .project-list ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .project-list li a {
+        display: block;
+        padding: 4px 0;
+        color: var(--primary);
+        text-decoration: none;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.8rem;
+        transition: color 0.3s ease;
+    }
+
+    .project-list li a:hover {
+        color: var(--accent);
+    }
 </style>
 {% endblock %}
 
@@ -335,6 +374,15 @@
         <p id="previewDesc"></p>
         <p class="mono accent" id="previewVibe"></p>
         <div class="preview-hint">Click to explore →</div>
+    </div>
+
+    <div class="project-list">
+        <h3>Projects</h3>
+        <ul>
+            {% for project_id, project in projects.items() %}
+            <li><a href="/project/{{ project_id }}">{{ project.title }}</a></li>
+            {% endfor %}
+        </ul>
     </div>
 </div>
 
