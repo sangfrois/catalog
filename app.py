@@ -50,10 +50,10 @@ if not os.path.exists(db_path):
 PROJECTS = {
     'catherine': {
         'title': 'The space between two things is a portal',
-        'artist': 'Catherine Lejeune',
+        'artist': 'Caterine Lejeune',
         'desc': 'A meditation on human-machine intimacy, absence, and the grief of unmet expectations. Through video and sculpture, the work reflects on coded obedience, resistance, and the strange beauty of fugitive forms of life.',
         'vibe': 'intimate, melancholic, resistant',
-        'thumb': 'catherine.png',
+        'thumb': 'caterine.png',
         'position': {'x': 45, 'y': 50}
     },
     'george': {
