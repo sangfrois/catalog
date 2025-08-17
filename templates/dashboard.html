@@ -405,8 +405,28 @@
     function renderFlow() {
         const container = document.getElementById('wordcloud');
         const words = Object.entries(wordData);
-        const maxFreq = Math.max(...Object.values(wordData));
         
+        if (words.length === 0) return;
+
+        const maxFreq = Math.max(...Object.values(wordData));
+        const numWords = words.length;
+
+        // Adjust parameters based on the number of unique words
+        const density = Math.min(numWords / 50, 1); // Normalize density (0 to 1, capped at 50 words)
+        
+        // Slower speed and larger words when there are fewer words
+        const baseDuration = 20000 + (1 - density) * 15000; // 20s to 35s
+        const durationVariance = 10000;
+        const baseSize = 24 + (1 - density) * 40; // 24px to 64px
+        const sizeVariance = 32;
+
+        // Lane system to prevent vertical overlap
+        const verticalMargin = 100; // Top and bottom margin
+        const avgWordHeight = baseSize * 1.2;
+        const numLanes = Math.max(1, Math.floor((window.innerHeight - verticalMargin * 2) / avgWordHeight));
+        const laneHeight = (window.innerHeight - verticalMargin * 2) / numLanes;
+        let nextLane = 0;
+
         // Create persistent floating words that cycle through
         const createFloatingWord = (word, freq, delay) => {
             setTimeout(() => {
@@ -416,21 +436,27 @@
                 wordEl.className = 'word-node floating-word';
                 wordEl.textContent = word;
                 
-                const startX = -100;
-                const endX = window.innerWidth + 100;
-                const y = 100 + Math.random() * (window.innerHeight - 200);
-                const duration = 15000 + Math.random() * 10000; // Much slower
-                const size = 32 + (freq / maxFreq) * 64; // Bigger words
+                const startX = -200;
+                const endX = window.innerWidth + 200;
+                
+                // Assign to a lane
+                const lane = nextLane % numLanes;
+                nextLane++;
+                const y = verticalMargin + (lane * laneHeight) + (Math.random() * laneHeight * 0.5 - laneHeight * 0.25);
+
+                const duration = baseDuration + Math.random() * durationVariance;
+                const size = baseSize + (freq / maxFreq) * sizeVariance;
                 
                 wordEl.style.cssText = `
                     left: ${startX}px;
                     top: ${y}px;
                     font-size: ${size}px;
                     transition: all ${duration}ms linear;
-                    opacity: ${0.8 + (freq / maxFreq) * 0.2};
+                    opacity: ${0.7 + (freq / maxFreq) * 0.3};
                     font-weight: ${freq > maxFreq * 0.3 ? 'bold' : 'normal'};
                     text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
                     z-index: ${Math.floor(freq * 10)};
+                    white-space: nowrap;
                 `;
                 
                 container.appendChild(wordEl);
@@ -438,22 +464,25 @@
                 // Start movement
                 setTimeout(() => {
                     wordEl.style.left = endX + 'px';
-                    wordEl.style.transform = `rotate(${Math.random() * 10 - 5}deg)`;
+                    wordEl.style.transform = `rotate(${Math.random() * 4 - 2}deg)`;
                 }, 100);
                 
                 // Remove and recreate for continuous flow
                 setTimeout(() => {
                     wordEl.remove();
                     if (currentMode === 'flow') {
-                        createFloatingWord(word, freq, 0); // Recreate immediately
+                        createFloatingWord(word, freq, 0);
                     }
                 }, duration + 100);
             }, delay);
         };
         
+        // Adjust stagger based on density to prevent initial clumping
+        const staggerDelay = Math.max(200, 1500 - (density * 1300));
+
         // Start continuous flow for each word
         words.forEach(([word, freq], index) => {
-            createFloatingWord(word, freq, index * 1000);
+            createFloatingWord(word, freq, index * staggerDelay);
         });
     }
     
