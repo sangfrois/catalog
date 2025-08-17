@@ -224,13 +224,15 @@
                 thoughtCount = Object.values(data).reduce((a, b) => a + b, 0);
                 document.getElementById('thoughtCount').textContent = thoughtCount;
                 
-                document.getElementById('wordcloud').innerHTML = '';
-                
                 if (currentMode === 'wordcloud') {
+                    document.getElementById('wordcloud').innerHTML = '';
                     renderWordcloud();
                 } else if (currentMode === 'network') {
+                    document.getElementById('wordcloud').innerHTML = '';
                     renderNetwork();
                 } else if (currentMode === 'flow') {
+                    // For flow, we don't clear the container, just restart the generator
+                    // with the new word data. Old words will finish their animation and disappear.
                     renderFlow();
                 }
             });
@@ -512,7 +514,7 @@
         };
 
         // Continuously generate new words
-        flowInterval = setInterval(createFloatingWord, 700);
+        flowInterval = setInterval(createFloatingWord, 1200);
     }
 
     function addNewWords(content) {
