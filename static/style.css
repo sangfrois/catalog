@@ -28,8 +28,9 @@
 }
 
 @keyframes blink-caret {
-    0%, 100% { border-color: transparent; }
+    0% { border-color: transparent; }
     50% { border-color: var(--accent); }
+    100% { border-color: transparent; }
 }
 
 .distort {
