@@ -239,16 +239,14 @@
         }
         
         // Set active nav on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            setActiveNav();
+        setActiveNav();
 
-            const navToggle = document.querySelector('.nav-toggle');
-            const nav = document.querySelector('.nav');
+        const navToggle = document.querySelector('.nav-toggle');
+        const nav = document.querySelector('.nav');
 
-            navToggle.addEventListener('click', () => {
-                nav.classList.toggle('nav-open');
-                navToggle.classList.toggle('nav-open');
-            });
+        navToggle.addEventListener('click', () => {
+            nav.classList.toggle('nav-open');
+            navToggle.classList.toggle('nav-open');
         });
         
         // Utility functions
