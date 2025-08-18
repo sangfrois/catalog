@@ -99,15 +99,13 @@ def validate_project_name(project_name):
 def validate_visitor_id(visitor_id):
     if not isinstance(visitor_id, str) or len(visitor_id) > 40:
         return False, "Invalid visitor ID format"
-    if not re.match(r'^[a-zA-Z0-9\-]+$', visitor_id):
+    if not re.match(r'^[a-zA-Z0-9\-_.]+$', visitor_id):
         return False, "Visitor ID contains invalid characters"
     return True, ""
 
 def validate_feedback_content(content):
     if not isinstance(content, str) or not (1 <= len(content) <= 2000):
         return False, "Content is invalid (type/length)"
-    if '<script' in content.lower() or 'onerror=' in content.lower():
-        return False, "Content contains suspicious patterns"
     return True, ""
 
 FORMULA_TRIGGERS = ['=', '+', '-', '@']
