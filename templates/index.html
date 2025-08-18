@@ -660,7 +660,7 @@
         const project = projects[projectId];
         const preview = document.getElementById('projectPreview');
         
-        document.getElementById('previewThumb').src = `/img/${project.thumb}`;
+        document.getElementById('previewThumb').src = `/static/img/${project.thumb}`;
         document.getElementById('previewThumb').alt = project.title;
         document.getElementById('previewTitle').textContent = project.title;
         document.getElementById('previewArtist').textContent = project.artist;
