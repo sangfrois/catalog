@@ -41,6 +41,9 @@ def simulate_user(user_id):
         
         if visit_res.status_code == 200:
             print(f"[User {user_id}] Successfully registered visit for project '{project}'.")
+        elif visit_res.status_code == 429:
+            print(f"[User {user_id}] Failed to register visit: Rate limited (Too many requests).")
+            return # Stop if visit fails
         else:
             print(f"[User {user_id}] Failed to register visit. Status: {visit_res.status_code}, Response: {visit_res.text}")
             return # Stop if visit fails
@@ -59,6 +62,8 @@ def simulate_user(user_id):
         
         if feedback_res.status_code == 200:
             print(f"[User {user_id}] Successfully submitted feedback: '{comment}'")
+        elif feedback_res.status_code == 429:
+            print(f"[User {user_id}] Failed to submit feedback: Rate limited (Too many requests).")
         else:
             print(f"[User {user_id}] Failed to submit feedback. Status: {feedback_res.status_code}, Response: {feedback_res.text}")
 
