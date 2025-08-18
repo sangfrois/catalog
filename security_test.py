@@ -16,7 +16,7 @@ def print_test_header(name):
     print(f"\n{'='*20}\n[TEST] {name}\n{'='*20}")
 
 def print_result(test_name, success, message=""):
-    status = "✅ PASS" if success else "❌ FAIL"
+    status = "[PASS]" if success else "[FAIL]"
     print(f"  {status}: {test_name}")
     if message:
         print(f"    -> {message}")
@@ -218,7 +218,7 @@ if __name__ == "__main__":
     
     print("\n" + "="*20 + "\nAUDIT SUMMARY\n" + "="*20)
     if all(results):
-        print("✅ All security tests passed successfully!")
+        print("[SUCCESS] All security tests passed successfully!")
     else:
         failures = results.count(False)
-        print(f"❌ {failures} security test(s) failed. Please review the output above.")
+        print(f"[FAILURE] {failures} security test(s) failed. Please review the output above.")
