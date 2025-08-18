@@ -664,7 +664,7 @@
         document.getElementById('previewThumb').alt = project.title;
         document.getElementById('previewTitle').textContent = project.title;
         document.getElementById('previewArtist').textContent = project.artist;
-        document.getElementById('previewDesc').textContent = project.desc.substring(0, 150) + '...';
+        document.getElementById('previewDesc').textContent = project.short_desc;
         document.getElementById('previewVibe').textContent = project.vibe;
         
         preview.style.left = event.pageX + 20 + 'px';

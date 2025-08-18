@@ -57,6 +57,7 @@ PROJECTS = {
 <blockquote class="pull-quote">The installation now asks: what happens to a relationship when one of its participants is missing, delayed, or imagined? Can connection persist in the form of longing, speculation, or refusal?</blockquote>
 <p>Through video and sculpture, the work continues to reflect on <span class="highlight-text">coded obedience</span>, <span class="highlight-text">resistance</span>, adaptation, and survivance. The absent robot meets the shimmer of two iridescent plants — organisms that adapt in darkness, offering soft metaphors for resilience.</p>
 <p>This is a project about the violence of categorization, the <span class="highlight-text">soft politics of care</span>, and the strange, persistent beauty of <span class="highlight-text">fugitive forms of life</span>. It insists that relation — even in its absence — can remain an act of tenderness. Even in mourning, the space between two things holds onto the reparative possibilities of play.</p>''',
+        'short_desc': 'An exploration of human-machine intimacy, mutual transformation, and the quiet grief of unmet expectations when technology fails to arrive.',
         'vibe': 'intimate, melancholic, resistant',
         'thumb': 'caterine.png',
         'position': {'x': 45, 'y': 50}
@@ -68,6 +69,7 @@ PROJECTS = {
 <p>Echoing the aesthetics of bureaucratic spaces, the work blurs the line between <span class="highlight-text">theatrical performance</span> and <span class="highlight-text">institutional reality</span>. Participants are asked to account for their ancestry, language, loyalty, and coherence, as though identity were a form to be filled, a pattern to be parsed.</p>
 <blockquote class="pull-quote">Rather than revealing a truth, the booth exposes the mechanisms by which truth is produced, challenged, and withheld in immigration systems.</blockquote>
 <p>Through its immersive design and tonal dissonance, Archive of Belonging questions <span class="highlight-text">who belongs, who decides</span>, and what is lost in the translation between self and system.</p>''',
+        'short_desc': 'An AI-powered fictional immigration booth that simulates the bureaucratic and psychological architecture of national evaluation, questioning who belongs and who decides.',
         'vibe': 'cinematic, satirical, challenging',
         'thumb': 'george.png',
         'position': {'x': 75, 'y': 75}
@@ -79,6 +81,7 @@ PROJECTS = {
 <p>Historically, a florilegium was a book of illustrated flowers, often commissioned by the wealthy to catalog exotic plants or private gardens. Our compulsive desires to archive fragile, ephemeral, transient things like flowers are rooted in nostalgia and anxiety over loss, a <span class="highlight-text">hauntological</span> symptomatic mourning not for what was, but for what won’t be. Archives create a network of <span class="highlight-text">power over memory</span>. AI systems rely on archives; what is already known, labeled, pictured, and classified. These taxonomies determine what is recognizable and reproducible, impeding possibilities of generating something which is not already known; <span class="highlight-text">flattening difference</span>.</p>
 <p>By embracing unpredictability and glitch through digital (re)processing, Florilegi/o rejects the fetish value of high resolution realism, pushing AI beyond legibility towards <span class="highlight-text">defamiliarization</span>. These flowers are not only digital objects but also subjects (or authors), evoking a story of the future.</p>
 <blockquote class="pull-quote">Florilegi/o asks who are the commissioners, the gardeners, the illustrators, of the future archives? And what agency will algorithms have?</blockquote>''',
+        'short_desc': 'An interactive archive of speculative digitized flowers, reimagined through generative AI to question power, memory, and the flattening of difference in digital archives.',
         'vibe': 'retrofuture, encyclopedic, nostalgic',
         'thumb': 'lydiaandlouis.png',
         'position': {'x': 35, 'y': 25}
@@ -90,6 +93,7 @@ PROJECTS = {
 <p class="lead-paragraph"><span class="highlight-text">Augury</span> is an ancient practice of taking omens, or auspices, ex caelo (from the sky). At the height of the Roman Empire, this <span class="highlight-text">divination system</span> was codified as a state apparatus for the <span class="highlight-text">hegemonic order</span>. As an instrument of power, augury became hermeneutics for translating sky watching, including birds and the emergence of flocks, as the will of Gods to justify political expediency. This systematic modelling of <span class="highlight-text">natural complexity</span> prefigures computer science concepts, pertinently those foundational to artificial life and self-organizing systems (see: Boids2).</p>
 <p>Today, new forms of technological abstraction take hold in which the probabilistic and fallible outputs of <span class="highlight-text">generative AI models</span> are rapidly naturalised and accepted as omniscient fact; a higher ‘intelligence’ that conveniently serves the ideological and economic interests of a technocratic, ‘rationalist’ neo-oligarchy.</p>
 <blockquote class="pull-quote">At this refrain, enter the Templum; a space for contemplation and <span class="highlight-text">paradivination</span>, and a platform built on a rapidly obsolescing technological stack from the nu-Web 2.0, presenting as a short educational game and <span class="highlight-text">digital anarchive</span> of ecological attunement, ancient divination, and antique A-life.</blockquote>''',
+        'short_desc': 'A contemplative space and digital anarchive exploring ancient divination systems, natural complexity, and the emergence of artificial life.',
         'vibe': 'ancient, mystical, deep',
         'thumb': 'krisandmike.png',
         'position': {'x': 65, 'y': 25}
@@ -100,6 +104,7 @@ PROJECTS = {
         'desc': '''<p class="lead-paragraph">The Feeling of Thought is a perceptually grounded <span class="highlight-text">language model</span> training interface that examines how language moves through perception and relation. It generates a <span class="highlight-text">live dataset</span> connecting words to their <span class="highlight-text">perceptual context</span>, temporal patterns, and associative links, revealing how meaning forms, transforms, and evolves through interaction.</p>
 <p>Each entry preserves linguistic content alongside its conditions of formation, presenting language as a dynamic field shaped by <span class="highlight-text">embodied and relational experience</span>. As these encounters are carried into other expressive forms, the system records how perception reorganizes when reflected into new structures. Tracing these shifts shows how communication reshapes meaning across contexts and surfaces the variations that guide <span class="highlight-text">shared understanding</span>.</p>
 <blockquote class="pull-quote">By adding this dimension, the project introduces the perceptual element missing from large language models, enabling meaning to be approached as a <span class="highlight-text">living, adaptive process</span> of exchange.</blockquote>''',
+        'short_desc': 'A perceptually grounded language model training interface that examines how meaning forms, transforms, and evolves through embodied and relational experience.',
         'vibe': 'perceptual, kinetic, transcendent',
         'thumb': 'nataandjihane.png',
         'position': {'x': 20, 'y': 75}
@@ -110,6 +115,7 @@ PROJECTS = {
         'desc': '''<blockquote>Big Brother is watching you — George Orwell, 1984</blockquote>
 <p class="lead-paragraph">In this project, Big Brother takes the form of a <span class="highlight-text">surveillance LLM</span> trained to monitor everyday conversations for signs of <span class="highlight-text">protest, dissent</span>, or anything that challenges authority. It reflects on how artificial intelligence can be used to <span class="highlight-text">regulate speech</span>, control public narratives, and restrict the flow of information to maintain power.</p>
 <blockquote class="pull-quote">Participants must find ways to express restricted ideas without being detected, embedding <span class="highlight-text">subversive intent</span> within <span class="highlight-text">coded language</span> and seemingly ordinary phrases. The system listens, analyzes, and determines what can and cannot be said.</blockquote>''',
+        'short_desc': 'A surveillance LLM that monitors conversations for dissent, forcing participants to use coded language to express subversive ideas without being detected.',
         'vibe': 'surveillance, coded, experimental',
         'thumb': 'pokiandkarim.png',
         'position': {'x': 45, 'y': 75}
@@ -120,6 +126,7 @@ PROJECTS = {
         'desc': '''<p class="lead-paragraph">Maps convey <span class="highlight-text">control</span>. Details, colours, and labels facilitate an overview of living realities and permanent beings. <span class="highlight-text">Positionality</span> and <span class="highlight-text">being-within-time</span> challenge the very notion of all-knowing and control.</p>
 <p>With the rise of mainstream <span class="highlight-text">generative artificial intelligence</span>, we’re witnessing a point in time where control structures are being challenged and rethought. The temporality of one’s being is observed through systems that claim to imagine and dream, accurately or not so much.</p>
 <blockquote class="pull-quote">This work is a meditation on Jorge Luis Borges’ story “On the Exactitude of Science” and how it would be thought of in the present day’s world of <span class="highlight-text">cybernetics</span> and control; through maps, control, and <span class="highlight-text">impermanence</span>.</blockquote>''',
+        'short_desc': "A meditation on control, impermanence, and cybernetics, inspired by Borges' story 'On the Exactitude of Science' in the age of generative AI.",
         'vibe': 'meditative, temporal, cartographic',
         'thumb': 'kamyar.png',
         'position': {'x': 65, 'y': 50}
@@ -130,6 +137,7 @@ PROJECTS = {
         'desc': '''<p class="lead-paragraph">Black Pudding: Collaborative Speculation Workshop is a workshop designed to offer an accessible and collaborative entry point into the <span class="highlight-text">creative re-use of AI</span>. Aimed at people who may have limited access to the technology or who are processing fear or anxiety about AI and animation, it creates space to collaborate on an AI-based short animation by contributing to a <span class="highlight-text">custom dataset</span> with <span class="highlight-text">collages</span>.</p>
 <p>As a point of departure, we use Black Pudding, a now-lost 1969 <span class="highlight-text">feminist animated pornographic film</span> by Nancy Edell. After a short presentation, participants are invited to engage with prompts based on archival research about the film, but to interpret them using collages. This workshop introduces participants to different forms of AI filmmaking tools in a low-pressure and <span class="highlight-text">ecologically mindful</span> setting, and proposes an alternative to the dominant narrative surrounding AI creative practices tied to <span class="highlight-text">extraction</span>.</p>
 <blockquote class="pull-quote">Instead, it asks: what might AI look like if we slowed it down, made it smaller, and used it to make art together?</blockquote>''',
+        'short_desc': 'A collaborative workshop using collage and AI to recreate a lost feminist film, offering an accessible, ecologically mindful approach to AI filmmaking.',
         'vibe': 'collaborative, accessible, speculative',
         'thumb': 'aurelie.png',
         'position': {'x': 15, 'y': 25}
