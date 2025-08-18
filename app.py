@@ -1,11 +1,13 @@
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, send_from_directory, make_response
 from flask_socketio import SocketIO, emit
 import sqlite3
 import os
 import json
-from collections import Counter
+from collections import Counter, defaultdict
 import re
 from datetime import datetime
+import time
+from werkzeug.middleware.proxy_fix import ProxyFix
 import numpy as np
 import spacy
 from itertools import combinations
@@ -24,6 +26,98 @@ except OSError:
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'machinic-encounters-secret'
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+# --- Security Implementation ---
+
+# Layer 1: Infrastructure and Middleware Security
+class RateLimitMiddleware:
+    """Rate limiting middleware to prevent DoS attacks."""
+    def __init__(self, app, limit=15, window=60):
+        self.app = app
+        self.limit = limit
+        self.window = window
+        self.clients = defaultdict(list)
+
+    def __call__(self, environ, start_response):
+        remote_addr = environ.get('HTTP_X_FORWARDED_FOR', environ.get('REMOTE_ADDR'))
+        current_time = time.time()
+        
+        recent_requests = [t for t in self.clients[remote_addr] if current_time - t < self.window]
+        self.clients[remote_addr] = recent_requests
+
+        if len(recent_requests) >= self.limit:
+            start_response('429 Too Many Requests', [('Content-Type', 'text/plain')])
+            return [b'Too many requests.']
+
+        self.clients[remote_addr].append(current_time)
+        return self.app(environ, start_response)
+
+# Apply middleware. ProxyFix must be first to get the correct IP.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+app.wsgi_app = RateLimitMiddleware(app.wsgi_app)
+
+# Layer 2: Dynamic Threat Response
+ip_violations = defaultdict(int)
+ip_block_time = {}
+IP_BLOCK_THRESHOLD = 5
+IP_BLOCK_DURATION = 3600  # 1 hour
+REQUEST_SIZE_LIMIT = 1 * 1024 * 1024  # 1MB
+
+@app.before_request
+def security_checks():
+    """Run security checks before each request."""
+    ip = request.remote_addr
+    current_time = time.time()
+
+    # 1. Check if IP is currently blocked
+    if ip in ip_block_time:
+        if current_time - ip_block_time[ip] < IP_BLOCK_DURATION:
+            return jsonify({'error': 'Access denied'}), 403
+        else:
+            del ip_block_time[ip]
+            if ip in ip_violations:
+                del ip_violations[ip]
+
+    # 2. Block if violation threshold is met
+    if ip_violations.get(ip, 0) >= IP_BLOCK_THRESHOLD:
+        ip_block_time[ip] = current_time
+        return jsonify({'error': 'Access denied'}), 403
+        
+    # 3. Limit request body size
+    if request.content_length and request.content_length > REQUEST_SIZE_LIMIT:
+        ip_violations[ip] += 1
+        return jsonify({'error': 'Request too large'}), 413
+
+# Layer 3: Input and Data Sanitization
+def validate_project_name(project_name):
+    if not project_name or project_name not in PROJECTS:
+        return False, "Invalid project name"
+    return True, ""
+
+def validate_visitor_id(visitor_id):
+    if not isinstance(visitor_id, str) or len(visitor_id) > 40:
+        return False, "Invalid visitor ID format"
+    if not re.match(r'^[a-zA-Z0-9\-]+$', visitor_id):
+        return False, "Visitor ID contains invalid characters"
+    return True, ""
+
+def validate_feedback_content(content):
+    if not isinstance(content, str) or not (1 <= len(content) <= 2000):
+        return False, "Content is invalid (type/length)"
+    if '<script' in content.lower() or 'onerror=' in content.lower():
+        return False, "Content contains suspicious patterns"
+    return True, ""
+
+FORMULA_TRIGGERS = ['=', '+', '-', '@']
+def sanitize_csv_value(value):
+    """Sanitizes a value to prevent CSV injection."""
+    if not isinstance(value, str):
+        return value
+    if any(value.startswith(trigger) for trigger in FORMULA_TRIGGERS):
+        return "'" + value
+    return value
+
+# --- End of Security Implementation ---
 
 # Ensure database exists
 db_path = 'catalog.db'
@@ -150,12 +244,36 @@ def serve_image(filename):
 
 @app.route('/')
 def index():
-    return render_template('index.html', projects=PROJECTS)
+    response = make_response(render_template('index.html', projects=PROJECTS))
+    # Layer 4: Application and Endpoint Security - Secure HTTP Headers
+    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; object-src 'none';"
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    return response
 
 @app.route('/project/<name>')
 def project(name):
     proj = PROJECTS.get(name, {"title": "Unknown", "desc": "", "thumb": "", "artist": ""})
     return render_template('project.html', project=proj, project_id=name)
+
+# Layer 4: Application and Endpoint Security - Secure Administrative Endpoints
+ADMIN_TOKEN = "your_very_secret_token"
+
+@app.route('/admin/unblock', methods=['POST'])
+def admin_unblock_ip():
+    if request.args.get('token') != ADMIN_TOKEN:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    ip_to_unblock = request.json.get('ip')
+    if not ip_to_unblock:
+        return jsonify({'error': 'IP address is required'}), 400
+        
+    if ip_to_unblock in ip_block_time:
+        del ip_block_time[ip_to_unblock]
+    if ip_to_unblock in ip_violations:
+        del ip_violations[ip_to_unblock]
+        
+    return jsonify({'status': f'IP {ip_to_unblock} has been unblocked and violations reset.'})
 
 @app.route('/dashboard')
 def dashboard():
@@ -172,22 +290,27 @@ def feedback():
     content = data.get('content')
     visitor_id = data.get('visitor_id', 'anonymous')
     
-    if project and content:
-        conn = sqlite3.connect(db_path)
-        c = conn.cursor()
-        c.execute('INSERT INTO feedback (project, content, visitor_id) VALUES (?, ?, ?)', 
-                 (project, content, visitor_id))
-        conn.commit()
-        conn.close()
-        
-        # Emit to dashboard
-        socketio.emit('new_feedback', {
-            'project': project, 
-            'content': content,
-            'timestamp': datetime.now().isoformat()
-        })
-        return jsonify({"status": "ok"})
-    return jsonify({"status": "error"}), 400
+    ip = request.remote_addr
+    for validator, value in [(validate_project_name, project), (validate_feedback_content, content), (validate_visitor_id, visitor_id)]:
+        is_valid, err_msg = validator(value)
+        if not is_valid:
+            ip_violations[ip] += 1
+            return jsonify({'error': err_msg}), 400
+
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute('INSERT INTO feedback (project, content, visitor_id) VALUES (?, ?, ?)', 
+             (project, content, visitor_id))
+    conn.commit()
+    conn.close()
+    
+    # Emit to dashboard
+    socketio.emit('new_feedback', {
+        'project': project, 
+        'content': content,
+        'timestamp': datetime.now().isoformat()
+    })
+    return jsonify({"status": "ok"})
 
 @app.route('/visit', methods=['POST'])
 def visit():
@@ -195,23 +318,28 @@ def visit():
     project = data.get('project')
     visitor_id = data.get('visitor_id', 'anonymous')
     
-    if project:
-        conn = sqlite3.connect(db_path)
-        c = conn.cursor()
-        
-        # Check if this visit already exists (prevent duplicates)
-        c.execute('SELECT COUNT(*) FROM visits WHERE project = ? AND visitor_id = ? AND datetime(timestamp) > datetime("now", "-1 minute")', 
+    ip = request.remote_addr
+    for validator, value in [(validate_project_name, project), (validate_visitor_id, visitor_id)]:
+        is_valid, err_msg = validator(value)
+        if not is_valid:
+            ip_violations[ip] += 1
+            return jsonify({'error': err_msg}), 400
+
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    
+    # Check if this visit already exists (prevent duplicates)
+    c.execute('SELECT COUNT(*) FROM visits WHERE project = ? AND visitor_id = ? AND datetime(timestamp) > datetime("now", "-1 minute")', 
+             (project, visitor_id))
+    recent_visit = c.fetchone()[0]
+    
+    if recent_visit == 0:
+        c.execute('INSERT INTO visits (project, visitor_id) VALUES (?, ?)', 
                  (project, visitor_id))
-        recent_visit = c.fetchone()[0]
-        
-        if recent_visit == 0:
-            c.execute('INSERT INTO visits (project, visitor_id) VALUES (?, ?)', 
-                     (project, visitor_id))
-            conn.commit()
-        
-        conn.close()
-        return jsonify({"status": "ok"})
-    return jsonify({"status": "error"}), 400
+        conn.commit()
+    
+    conn.close()
+    return jsonify({"status": "ok"})
 
 @app.route('/api/wordcloud')
 def get_wordcloud():
