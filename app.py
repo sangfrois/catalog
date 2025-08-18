@@ -32,7 +32,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # Layer 1: Infrastructure and Middleware Security
 class RateLimitMiddleware:
     """Rate limiting middleware to prevent DoS attacks."""
-    def __init__(self, app, limit=15, window=60):
+    def __init__(self, app, limit=100, window=60):
         self.app = app
         self.limit = limit
         self.window = window
