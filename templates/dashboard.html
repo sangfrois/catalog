@@ -390,6 +390,7 @@
     <div class="stats-overlay">
         <div>Thoughts collected: <span id="thoughtCount">0</span></div>
         <div>Active connections: <span id="connectionCount">0</span></div>
+        <div>Active presences: <span id="visitorCount">0</span></div>
         <div>Last update: <span id="lastUpdate">--:--</span></div>
     </div>
 </div>
@@ -417,6 +418,10 @@
             
             // Add new words to visualization
             addNewWords(data.content);
+        });
+
+        socket.on('update_visitor_count', function(data) {
+            document.getElementById('visitorCount').textContent = data.count;
         });
         
         // Refresh data every 30 seconds

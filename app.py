@@ -27,6 +27,8 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'machinic-encounters-secret'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+active_visitors = 0
+
 # --- Security Implementation ---
 
 # Layer 1: Infrastructure and Middleware Security
@@ -694,7 +696,10 @@ def get_personal_corpse(visitor_id):
 
 @socketio.on('connect')
 def handle_connect():
-    print('Client connected')
+    global active_visitors
+    active_visitors += 1
+    print(f'Client connected. Active presences: {active_visitors}')
+    socketio.emit('update_visitor_count', {'count': active_visitors})
 
 def generate_poetic_fragments(feedback_data):
     """Generate poetic fragments through enhanced creative language manipulation."""
@@ -1040,7 +1045,11 @@ def create_personal_corpse_poem(fragments, visitor_id):
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    print('Client disconnected')
+    global active_visitors
+    if active_visitors > 0:
+        active_visitors -= 1
+    print(f'Client disconnected. Active presences: {active_visitors}')
+    socketio.emit('update_visitor_count', {'count': active_visitors})
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, host='0.0.0.0', port=5000)
