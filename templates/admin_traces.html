@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Traces</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; background-color: #f4f4f4; color: #333; }
+        h1 { color: #1a1a1a; }
+        h2 { border-bottom: 2px solid #ccc; padding-bottom: 5px; margin-top: 2em; }
+        .project-container { margin-bottom: 2em; background: #fff; padding: 1em; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .feedback-item { border-bottom: 1px solid #eee; padding: 1em 0; }
+        .feedback-item:last-child { border-bottom: none; }
+        .meta { font-size: 0.8em; color: #666; }
+        p { margin-top: 0.5em; }
+    </style>
+</head>
+<body>
+    <h1>All Feedback Traces by Project</h1>
+
+    {% for project_name, feedbacks in projects_feedback %}
+    <div class="project-container">
+        <h2>{{ PROJECTS.get(project_name, {'title': project_name})['title'] }}</h2>
+        {% if feedbacks %}
+            {% for feedback in feedbacks %}
+            <div class="feedback-item">
+                <p>{{ feedback.content }}</p>
+                <div class="meta">
+                    <strong>Visitor:</strong> {{ feedback.visitor_id }} | <strong>Timestamp:</strong> {{ feedback.timestamp }}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>No feedback for this project yet.</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+</body>
+</html>

@@ -275,6 +275,31 @@ def admin_unblock_ip():
         
     return jsonify({'status': f'IP {ip_to_unblock} has been unblocked and violations reset.'})
 
+@app.route('/admin/traces')
+def admin_traces():
+    if request.args.get('token') != ADMIN_TOKEN:
+        return "Unauthorized", 401
+
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute('SELECT project, content, timestamp, visitor_id FROM feedback ORDER BY project, timestamp DESC')
+    
+    feedback_by_project = defaultdict(list)
+    for row in c.fetchall():
+        project, content, timestamp, visitor_id = row
+        feedback_by_project[project].append({
+            'content': content,
+            'timestamp': timestamp,
+            'visitor_id': visitor_id
+        })
+    
+    conn.close()
+    
+    # Sort projects by name
+    sorted_projects = sorted(feedback_by_project.items())
+    
+    return render_template('admin_traces.html', projects_feedback=sorted_projects, PROJECTS=PROJECTS)
+
 @app.route('/dashboard')
 def dashboard():
     return render_template('dashboard.html')
