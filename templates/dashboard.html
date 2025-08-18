@@ -22,6 +22,9 @@
         font-size: 2rem;
         margin-bottom: 0.5rem;
         color: var(--accent);
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap; /* For mobile */
     }
     
     .dashboard-subtitle {
@@ -88,15 +91,14 @@
         opacity: 0.7;
     }
     
-    .live-indicator {
-        position: absolute;
-        top: 80px;
-        left: 20px;
-        display: flex;
+    .live-indicator-inline {
+        display: inline-flex;
         align-items: center;
         gap: 8px;
-        font-size: 12px;
+        font-size: 1rem;
         opacity: 0.8;
+        margin-left: 15px;
+        font-weight: normal;
     }
     
     .live-dot {
@@ -281,14 +283,6 @@
             font-size: 0.9rem;
         }
 
-        .live-indicator {
-            position: relative;
-            top: auto;
-            left: auto;
-            justify-content: center;
-            padding-top: 10px;
-        }
-
         .mode-toggle {
             position: relative;
             top: auto;
@@ -366,14 +360,14 @@
 {% block content %}
 <div class="dashboard-container">
     <div class="dashboard-header">
-        <h1 class="dashboard-title glitch">COLLECTIVE MIND</h1>
+        <h1 class="dashboard-title glitch">EMERGENT THOUGHTS
+            <span class="live-indicator-inline">
+                <span class="live-dot"></span>
+                <span class="mono">LIVE</span>
+            </span>
+        </h1>
         <p class="dashboard-subtitle mono">Live visualization of participant thoughts</p>
         <p class="dashboard-description">Words and connections emerge from visitor reflections across all projects</p>
-    </div>
-    
-    <div class="live-indicator">
-        <div class="live-dot"></div>
-        <span class="mono">LIVE</span>
     </div>
     
     <div class="mode-toggle">
