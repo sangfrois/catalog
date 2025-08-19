@@ -12,6 +12,13 @@ import numpy as np
 import spacy
 from itertools import combinations
 from langdetect import detect, LangDetectException
+import umap
+from sentence_transformers import SentenceTransformer
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
+import matplotlib.pyplot as plt
+import io
+import base64
 
 # Load spacy models
 try:
@@ -22,6 +29,13 @@ except OSError:
     print('python -m spacy download en_core_web_sm')
     print('python -m spacy download fr_core_news_sm')
     exit()
+
+# Load sentence transformer for embeddings
+try:
+    embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+except Exception as e:
+    print(f'Error loading sentence transformer: {e}')
+    embedding_model = None
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'machinic-encounters-secret'
@@ -516,89 +530,115 @@ def process_text_bilingual(text):
     
     return unique_keywords
 
-@app.route('/api/word_network')
-def get_word_network():
+@app.route('/admin/compute_embeddings', methods=['POST'])
+def admin_compute_embeddings():
+    if request.args.get('token') != ADMIN_TOKEN:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    if not embedding_model:
+        return jsonify({'error': 'Embedding model not available'}), 500
+    
+    data = request.json
+    trajectory_type = data.get('type', 'project')  # 'project' or 'visitor'
+    target_id = data.get('target_id')  # project name or visitor_id
+    
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
-    c.execute('SELECT content, project, timestamp FROM feedback ORDER BY timestamp')
-    feedback_data = [{'content': row[0], 'project': row[1], 'timestamp': row[2]} for row in c.fetchall()]
+    
+    if trajectory_type == 'project':
+        if not target_id or target_id not in PROJECTS:
+            return jsonify({'error': 'Invalid project name'}), 400
+        c.execute('SELECT content, timestamp, visitor_id FROM feedback WHERE project = ? ORDER BY timestamp', (target_id,))
+        title = f"Project: {PROJECTS[target_id]['title']}"
+    else:  # visitor
+        if not target_id:
+            return jsonify({'error': 'Visitor ID required'}), 400
+        c.execute('SELECT content, timestamp, project FROM feedback WHERE visitor_id = ? ORDER BY timestamp', (target_id,))
+        title = f"Visitor: {target_id}"
+    
+    feedback_data = c.fetchall()
     conn.close()
-
+    
     if len(feedback_data) < 2:
-        return jsonify({'nodes': [], 'links': [], 'metadata': {'total_feedback': 0}})
-
-    # Simple approach: extract key concepts and their project associations
-    all_concepts = []
-    concept_projects = {}
+        return jsonify({'error': 'Not enough data points for trajectory'}), 400
     
-    for entry in feedback_data:
-        concepts = process_text_bilingual(entry['content'])
-        all_concepts.extend(concepts)
+    # Extract texts and metadata
+    texts = [row[0] for row in feedback_data]
+    timestamps = [row[1] for row in feedback_data]
+    third_column = [row[2] for row in feedback_data]  # visitor_id for project, project for visitor
+    
+    try:
+        # Compute embeddings
+        embeddings = embedding_model.encode(texts)
         
-        for concept in concepts:
-            if concept not in concept_projects:
-                concept_projects[concept] = {}
-            if entry['project'] not in concept_projects[concept]:
-                concept_projects[concept][entry['project']] = 0
-            concept_projects[concept][entry['project']] += 1
-
-    concept_freq = Counter(all_concepts)
-    if not concept_freq:
-        return jsonify({'nodes': [], 'links': [], 'metadata': {'total_feedback': len(feedback_data)}})
-
-    # Keep only the most frequent and meaningful concepts
-    total_feedback = len(feedback_data)
-    max_nodes = 20 if total_feedback > 150 else 25
-    min_freq = 2 if total_feedback > 100 else 1
-    
-    top_concepts = [concept for concept, freq in concept_freq.most_common(max_nodes) if freq >= min_freq]
-    
-    # Simple co-occurrence links - only show strong connections
-    links = []
-    co_occurrence = Counter()
-    
-    for entry in feedback_data:
-        concepts = [c for c in process_text_bilingual(entry['content']) if c in top_concepts]
-        # Only connect concepts that appear together in the same feedback
-        for c1, c2 in combinations(concepts, 2):
-            pair = tuple(sorted((c1, c2)))
-            co_occurrence[pair] += 1
-    
-    # Only keep strong connections (appeared together multiple times)
-    min_connection_strength = 2 if total_feedback > 100 else 1
-    
-    for (c1, c2), strength in co_occurrence.items():
-        if strength >= min_connection_strength:
-            links.append({
-                'source': c1,
-                'target': c2,
-                'strength': min(strength, 5)  # Cap at 5 for visual clarity
+        # Apply UMAP
+        umap_reducer = umap.UMAP(n_components=2, random_state=42, n_neighbors=min(15, len(texts)-1))
+        umap_embeddings = umap_reducer.fit_transform(embeddings)
+        
+        # Create visualization
+        plt.figure(figsize=(12, 8))
+        plt.style.use('dark_background')
+        
+        # Color by time progression
+        colors = plt.cm.viridis(np.linspace(0, 1, len(umap_embeddings)))
+        
+        # Plot points
+        scatter = plt.scatter(umap_embeddings[:, 0], umap_embeddings[:, 1], 
+                            c=colors, s=60, alpha=0.8, edgecolors='white', linewidth=0.5)
+        
+        # Draw trajectory lines
+        plt.plot(umap_embeddings[:, 0], umap_embeddings[:, 1], 
+                'white', alpha=0.3, linewidth=1, linestyle='--')
+        
+        # Annotate points with order
+        for i, (x, y) in enumerate(umap_embeddings):
+            plt.annotate(f'{i+1}', (x, y), xytext=(5, 5), textcoords='offset points',
+                        fontsize=8, color='white', alpha=0.7)
+        
+        plt.title(f'UMAP Trajectory: {title}', fontsize=14, color='white', pad=20)
+        plt.xlabel('UMAP Dimension 1', fontsize=12, color='white')
+        plt.ylabel('UMAP Dimension 2', fontsize=12, color='white')
+        
+        # Add colorbar for time progression
+        cbar = plt.colorbar(scatter, shrink=0.8)
+        cbar.set_label('Time Progression', color='white')
+        cbar.ax.yaxis.set_tick_params(color='white')
+        plt.setp(plt.getp(cbar.ax.axes, 'yticklabels'), color='white')
+        
+        plt.tight_layout()
+        
+        # Convert plot to base64 string
+        img_buffer = io.BytesIO()
+        plt.savefig(img_buffer, format='png', facecolor='black', dpi=150, bbox_inches='tight')
+        img_buffer.seek(0)
+        img_base64 = base64.b64encode(img_buffer.getvalue()).decode()
+        plt.close()
+        
+        # Prepare response data
+        trajectory_data = []
+        for i, (text, timestamp, meta) in enumerate(zip(texts, timestamps, third_column)):
+            trajectory_data.append({
+                'index': i + 1,
+                'text': text[:100] + '...' if len(text) > 100 else text,
+                'full_text': text,
+                'timestamp': timestamp,
+                'umap_x': float(umap_embeddings[i, 0]),
+                'umap_y': float(umap_embeddings[i, 1]),
+                'metadata': meta  # visitor_id for project trajectory, project for visitor trajectory
             })
-
-    # Create simple nodes
-    nodes = []
-    for concept in top_concepts:
-        # Find which project this concept appears in most
-        project_counts = concept_projects.get(concept, {})
-        primary_project = max(project_counts.keys(), key=project_counts.get) if project_counts else 'unknown'
         
-        nodes.append({
-            'id': concept,
-            'frequency': concept_freq[concept],
-            'size': 14 + min(concept_freq[concept] * 3, 20),
-            'primary_project': primary_project,
-            'appears_in': len(project_counts)
+        return jsonify({
+            'success': True,
+            'trajectory_type': trajectory_type,
+            'target_id': target_id,
+            'title': title,
+            'plot_image': img_base64,
+            'data_points': len(trajectory_data),
+            'trajectory_data': trajectory_data
         })
-
-    return jsonify({
-        'nodes': nodes,
-        'links': links,
-        'metadata': {
-            'total_feedback': len(feedback_data),
-            'unique_concepts': len(top_concepts),
-            'total_connections': len(links)
-        }
-    })
+        
+    except Exception as e:
+        return jsonify({'error': f'Embedding computation failed: {str(e)}'}), 500
 
 @app.route('/api/exquisite_corpse')
 def get_exquisite_corpse():

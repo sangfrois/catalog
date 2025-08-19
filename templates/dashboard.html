@@ -423,7 +423,6 @@
     
     <div class="mode-toggle">
         <button class="mode-btn active" onclick="setMode('wordcloud')">Words</button>
-        <button class="mode-btn" onclick="setMode('network')">Network</button>
         <button class="mode-btn" onclick="setMode('flow')">Flow</button>
         <button class="mode-btn" onclick="setMode('corpse')">Poiesis</button>
     </div>
@@ -513,8 +512,6 @@
         
         if (mode === 'wordcloud') {
             renderWordcloud();
-        } else if (mode === 'network') {
-            renderNetwork();
         } else if (mode === 'flow') {
             renderFlow();
         } else if (mode === 'corpse') {
@@ -555,229 +552,6 @@
         });
     }
     
-    function renderNetwork() {
-        const container = document.getElementById('wordcloud');
-        
-        // Simple project color mapping
-        const projectColors = {
-            'catherine': '#ff6b6b',
-            'george': '#4ecdc4',
-            'lydia': '#45b7d1',
-            'mike_kris': '#f9ca24',
-            'nata': '#6c5ce7',
-            'poki': '#fd79a8',
-            'kamyar': '#00b894',
-            'aurelie': '#fdcb6e'
-        };
-        
-        fetch('/api/word_network')
-            .then(response => response.json())
-            .then(networkData => {
-                if (networkData.nodes.length === 0) {
-                    container.innerHTML = '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--muted); font-size: 24px;">Collecting thoughts...</div>';
-                    return;
-                }
-                
-                const centerX = container.clientWidth / 2;
-                const centerY = container.clientHeight / 2;
-                
-                // Add simple controls
-                const controlsEl = document.createElement('div');
-                controlsEl.className = 'network-controls';
-                controlsEl.innerHTML = `
-                    <div class="project-filters">
-                        <button class="project-filter-btn active" onclick="filterByProject(null)">Show All</button>
-                        ${Object.keys(projectColors).map(project => 
-                            `<button class="project-filter-btn" style="border-color: ${projectColors[project]}; color: ${projectColors[project]}" onclick="filterByProject('${project}')">${project.replace('_', ' ')}</button>`
-                        ).join('')}
-                    </div>
-                `;
-                container.appendChild(controlsEl);
-                
-                // Position nodes in a simple circle layout
-                const nodes = networkData.nodes.map((node, i) => {
-                    const angle = (i / networkData.nodes.length) * 2 * Math.PI;
-                    const radius = Math.min(centerX, centerY) * 0.6; // Use 60% of available space
-                    
-                    const x = centerX + Math.cos(angle) * radius;
-                    const y = centerY + Math.sin(angle) * radius;
-                    
-                    return { ...node, x, y };
-                });
-                
-                // Create simple nodes
-                nodes.forEach(node => {
-                    const nodeEl = document.createElement('div');
-                    nodeEl.className = 'word-node network-node';
-                    nodeEl.textContent = node.id;
-                    nodeEl.dataset.primaryProject = node.primary_project;
-                    
-                    const color = projectColors[node.primary_project] || '#ffffff';
-                    
-                    nodeEl.style.cssText = `
-                        left: ${node.x - node.id.length * 4}px;
-                        top: ${node.y - 10}px;
-                        font-size: ${node.size}px;
-                        color: ${color};
-                        font-weight: ${node.appears_in > 1 ? 'bold' : 'normal'};
-                        text-shadow: 0 0 8px ${color}60;
-                        transition: all 0.3s ease;
-                        cursor: pointer;
-                        opacity: 0.9;
-                    `;
-                    
-                    // Simple hover effect
-                    nodeEl.addEventListener('mouseenter', () => {
-                        nodeEl.style.transform = 'scale(1.3)';
-                        nodeEl.style.textShadow = `0 0 15px ${color}`;
-                        
-                        // Show simple tooltip
-                        const tooltip = document.createElement('div');
-                        tooltip.className = 'network-tooltip';
-                        tooltip.innerHTML = `
-                            <strong>${node.id}</strong><br>
-                            Mentioned ${node.frequency} times<br>
-                            Main project: ${node.primary_project}<br>
-                            Appears in ${node.appears_in} project(s)
-                        `;
-                        tooltip.style.cssText = `
-                            position: absolute;
-                            left: ${node.x + 50}px;
-                            top: ${node.y - 60}px;
-                            background: rgba(0,0,0,0.9);
-                            color: white;
-                            padding: 8px;
-                            border-radius: 4px;
-                            font-size: 12px;
-                            z-index: 1001;
-                            pointer-events: none;
-                            border: 1px solid ${color};
-                        `;
-                        container.appendChild(tooltip);
-                        
-                        // Highlight connected links
-                        container.querySelectorAll('.network-link').forEach(link => {
-                            if (link.dataset.source === node.id || link.dataset.target === node.id) {
-                                link.style.opacity = '0.8';
-                                link.style.background = color;
-                                link.style.height = '3px';
-                            } else {
-                                link.style.opacity = '0.1';
-                            }
-                        });
-                    });
-                    
-                    nodeEl.addEventListener('mouseleave', () => {
-                        nodeEl.style.transform = 'scale(1)';
-                        nodeEl.style.textShadow = `0 0 8px ${color}60`;
-                        
-                        // Remove tooltip
-                        const tooltip = container.querySelector('.network-tooltip');
-                        if (tooltip) tooltip.remove();
-                        
-                        // Reset links
-                        container.querySelectorAll('.network-link').forEach(link => {
-                            link.style.opacity = '0.4';
-                            link.style.background = 'rgba(255, 255, 255, 0.4)';
-                            link.style.height = `${1 + parseFloat(link.dataset.strength)}px`;
-                        });
-                    });
-                    
-                    container.appendChild(nodeEl);
-                });
-                
-                // Create simple connection lines
-                networkData.links.forEach(link => {
-                    const sourceNode = nodes.find(n => n.id === link.source);
-                    const targetNode = nodes.find(n => n.id === link.target);
-                    
-                    if (sourceNode && targetNode) {
-                        const linkEl = document.createElement('div');
-                        linkEl.className = 'connection-line network-link';
-                        linkEl.dataset.source = link.source;
-                        linkEl.dataset.target = link.target;
-                        linkEl.dataset.strength = link.strength;
-                        
-                        const dx = targetNode.x - sourceNode.x;
-                        const dy = targetNode.y - sourceNode.y;
-                        const length = Math.sqrt(dx * dx + dy * dy);
-                        const angle = Math.atan2(dy, dx);
-                        
-                        linkEl.style.cssText = `
-                            left: ${sourceNode.x}px;
-                            top: ${sourceNode.y}px;
-                            width: ${length}px;
-                            height: ${1 + link.strength}px;
-                            transform: rotate(${angle}rad);
-                            opacity: 0.4;
-                            background: rgba(255, 255, 255, 0.4);
-                            transition: all 0.3s ease;
-                            z-index: 1;
-                        `;
-                        
-                        container.appendChild(linkEl);
-                    }
-                });
-                
-                document.getElementById('connectionCount').textContent = networkData.links.length;
-                
-                // Simple project filter function
-                window.filterByProject = (project) => {
-                    // Update button states
-                    container.querySelectorAll('.project-filter-btn').forEach(btn => {
-                        btn.classList.remove('active');
-                    });
-                    
-                    if (project) {
-                        container.querySelector(`[onclick="filterByProject('${project}')"]`).classList.add('active');
-                        
-                        // Show only nodes from this project
-                        container.querySelectorAll('.network-node').forEach(node => {
-                            if (node.dataset.primaryProject === project) {
-                                node.style.opacity = '1';
-                                node.style.transform = 'scale(1.1)';
-                            } else {
-                                node.style.opacity = '0.2';
-                                node.style.transform = 'scale(0.8)';
-                            }
-                        });
-                        
-                        // Show only relevant links
-                        container.querySelectorAll('.network-link').forEach(link => {
-                            const sourceNode = container.querySelector(`[data-primary-project="${project}"]`);
-                            const targetNode = container.querySelector(`[data-primary-project="${project}"]`);
-                            
-                            const sourceMatch = Array.from(container.querySelectorAll('.network-node')).find(n => 
-                                n.textContent === link.dataset.source && n.dataset.primaryProject === project
-                            );
-                            const targetMatch = Array.from(container.querySelectorAll('.network-node')).find(n => 
-                                n.textContent === link.dataset.target && n.dataset.primaryProject === project
-                            );
-                            
-                            if (sourceMatch || targetMatch) {
-                                link.style.opacity = '0.6';
-                            } else {
-                                link.style.opacity = '0.1';
-                            }
-                        });
-                    } else {
-                        // Show all
-                        container.querySelector('.project-filter-btn').classList.add('active');
-                        container.querySelectorAll('.network-node').forEach(node => {
-                            node.style.opacity = '0.9';
-                            node.style.transform = 'scale(1)';
-                        });
-                        container.querySelectorAll('.network-link').forEach(link => {
-                            link.style.opacity = '0.4';
-                        });
-                    }
-                };
-            })
-            .catch(error => {
-                console.error('Network error:', error);
-                container.innerHTML = '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--muted); font-size: 18px;">Network visualization loading...</div>';
-            });
-    }
     
     function renderFlow() {
         if (flowInterval) {
@@ -944,16 +718,14 @@
     function addNewWords(content) {
         const container = document.getElementById('wordcloud');
         
-        if (currentMode === 'network') {
-            // Add pulsing effect to existing network on new feedback
-            const existingWords = container.querySelectorAll('.word-node');
-            existingWords.forEach(wordEl => {
-                wordEl.style.animation = 'pulse 1s ease-in-out';
-                setTimeout(() => {
-                    wordEl.style.animation = '';
-                }, 1000);
-            });
-        }
+        // Add pulsing effect to existing words on new feedback
+        const existingWords = container.querySelectorAll('.word-node');
+        existingWords.forEach(wordEl => {
+            wordEl.style.animation = 'pulse 1s ease-in-out';
+            setTimeout(() => {
+                wordEl.style.animation = '';
+            }, 1000);
+        });
     }
 </script>
 {% endblock %}
