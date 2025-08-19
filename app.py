@@ -32,6 +32,8 @@ except OSError:
 
 # Load sentence transformer for embeddings
 embedding_model = None
+embeddings_cache = {}  # Cache for computed embeddings
+
 def load_embedding_model():
     global embedding_model
     if embedding_model is None:
@@ -42,8 +44,21 @@ def load_embedding_model():
         except Exception as e:
             print(f'Error loading sentence transformer: {e}')
             print("Try running: pip install sentence-transformers torch")
-            embedding_model = None
+            # Try alternative model or fallback
+            try:
+                print("Trying alternative model...")
+                embedding_model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
+                print("Alternative sentence transformer model loaded successfully")
+            except Exception as e2:
+                print(f'Alternative model also failed: {e2}')
+                embedding_model = None
     return embedding_model
+
+# Initialize embedding model at startup
+try:
+    load_embedding_model()
+except Exception as e:
+    print(f"Failed to initialize embedding model at startup: {e}")
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'machinic-encounters-secret'
@@ -742,77 +757,176 @@ def admin_compute_embeddings():
     if not token or token != ADMIN_TOKEN:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    # Try to load the model if it's not already loaded
-    model = load_embedding_model()
-    if not model:
+    global embedding_model, embeddings_cache
+    
+    # Force reload the model if it's not available
+    if embedding_model is None:
+        embedding_model = load_embedding_model()
+    
+    if embedding_model is None:
         return jsonify({'error': 'Embedding model not available. Please ensure sentence-transformers and torch are installed.'}), 500
     
     data = request.json
-    trajectory_type = data.get('type', 'project')  # 'project' or 'visitor'
-    target_id = data.get('target_id')  # project name or visitor_id
+    view_type = data.get('view', 'all_projects')  # 'all_projects' or 'all_visitors'
     
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
     
-    if trajectory_type == 'project':
-        if not target_id or target_id not in PROJECTS:
-            return jsonify({'error': 'Invalid project name'}), 400
-        c.execute('SELECT content, timestamp, visitor_id FROM feedback WHERE project = ? ORDER BY timestamp', (target_id,))
-        title = f"Project: {PROJECTS[target_id]['title']}"
-    else:  # visitor
-        if not target_id:
-            return jsonify({'error': 'Visitor ID required'}), 400
-        c.execute('SELECT content, timestamp, project FROM feedback WHERE visitor_id = ? ORDER BY timestamp', (target_id,))
-        title = f"Visitor: {target_id}"
-    
-    feedback_data = c.fetchall()
-    conn.close()
-    
-    if len(feedback_data) < 2:
-        return jsonify({'error': 'Not enough data points for trajectory'}), 400
-    
-    # Extract texts and metadata
-    texts = [row[0] for row in feedback_data]
-    timestamps = [row[1] for row in feedback_data]
-    third_column = [row[2] for row in feedback_data]  # visitor_id for project, project for visitor
+    # Check if embeddings are already cached
+    cache_key = f"{view_type}_embeddings"
+    if cache_key in embeddings_cache:
+        print("Using cached embeddings")
+        return jsonify(embeddings_cache[cache_key])
     
     try:
-        # Compute embeddings
-        embeddings = model.encode(texts)
-        
-        # Apply UMAP
-        umap_reducer = umap.UMAP(n_components=2, random_state=42, n_neighbors=min(15, len(texts)-1))
-        umap_embeddings = umap_reducer.fit_transform(embeddings)
-        
-        # Create visualization
-        plt.figure(figsize=(12, 8))
-        plt.style.use('dark_background')
-        
-        # Color by time progression
-        colors = plt.cm.viridis(np.linspace(0, 1, len(umap_embeddings)))
-        
-        # Plot points
-        scatter = plt.scatter(umap_embeddings[:, 0], umap_embeddings[:, 1], 
-                            c=colors, s=60, alpha=0.8, edgecolors='white', linewidth=0.5)
-        
-        # Draw trajectory lines
-        plt.plot(umap_embeddings[:, 0], umap_embeddings[:, 1], 
-                'white', alpha=0.3, linewidth=1, linestyle='--')
-        
-        # Annotate points with order
-        for i, (x, y) in enumerate(umap_embeddings):
-            plt.annotate(f'{i+1}', (x, y), xytext=(5, 5), textcoords='offset points',
-                        fontsize=8, color='white', alpha=0.7)
-        
-        plt.title(f'UMAP Trajectory: {title}', fontsize=14, color='white', pad=20)
-        plt.xlabel('UMAP Dimension 1', fontsize=12, color='white')
-        plt.ylabel('UMAP Dimension 2', fontsize=12, color='white')
-        
-        # Add colorbar for time progression
-        cbar = plt.colorbar(scatter, shrink=0.8)
-        cbar.set_label('Time Progression', color='white')
-        cbar.ax.yaxis.set_tick_params(color='white')
-        plt.setp(plt.getp(cbar.ax.axes, 'yticklabels'), color='white')
+        if view_type == 'all_projects':
+            # Get all feedback grouped by project
+            c.execute('SELECT project, content, timestamp, visitor_id FROM feedback ORDER BY project, timestamp')
+            all_data = c.fetchall()
+            
+            if len(all_data) < 5:
+                return jsonify({'error': 'Not enough data points for visualization'}), 400
+            
+            # Group by project
+            project_data = defaultdict(list)
+            all_texts = []
+            text_metadata = []
+            
+            for project, content, timestamp, visitor_id in all_data:
+                project_data[project].append({
+                    'content': content,
+                    'timestamp': timestamp,
+                    'visitor_id': visitor_id
+                })
+                all_texts.append(content)
+                text_metadata.append({
+                    'project': project,
+                    'timestamp': timestamp,
+                    'visitor_id': visitor_id
+                })
+            
+            # Compute embeddings for all texts
+            print(f"Computing embeddings for {len(all_texts)} texts...")
+            embeddings = embedding_model.encode(all_texts, show_progress_bar=True)
+            
+            # Apply UMAP
+            print("Applying UMAP dimensionality reduction...")
+            umap_reducer = umap.UMAP(n_components=2, random_state=42, n_neighbors=min(15, len(embeddings)-1))
+            umap_embeddings = umap_reducer.fit_transform(embeddings)
+            
+            # Create visualization
+            plt.figure(figsize=(16, 12))
+            plt.style.use('dark_background')
+            
+            # Create color map for projects
+            project_names = list(project_data.keys())
+            colors = plt.cm.Set3(np.linspace(0, 1, len(project_names)))
+            project_colors = dict(zip(project_names, colors))
+            
+            # Plot points for each project
+            for i, (x, y) in enumerate(umap_embeddings):
+                project = text_metadata[i]['project']
+                plt.scatter(x, y, c=[project_colors[project]], s=60, alpha=0.7, 
+                           edgecolors='white', linewidth=0.5, label=project if i == 0 or project not in [text_metadata[j]['project'] for j in range(i)] else "")
+            
+            # Draw trajectory lines for each project
+            for project in project_names:
+                project_indices = [i for i, meta in enumerate(text_metadata) if meta['project'] == project]
+                if len(project_indices) > 1:
+                    project_coords = umap_embeddings[project_indices]
+                    plt.plot(project_coords[:, 0], project_coords[:, 1], 
+                            color=project_colors[project], alpha=0.3, linewidth=2, linestyle='--')
+            
+            plt.title('UMAP Trajectories: All Projects', fontsize=16, color='white', pad=20)
+            plt.xlabel('UMAP Dimension 1', fontsize=12, color='white')
+            plt.ylabel('UMAP Dimension 2', fontsize=12, color='white')
+            
+            # Create legend
+            handles, labels = plt.gca().get_legend_handles_labels()
+            by_label = dict(zip(labels, handles))
+            plt.legend(by_label.values(), by_label.keys(), loc='upper right', 
+                      facecolor='black', edgecolor='white', fontsize=10)
+            
+            title = "All Projects Trajectories"
+            
+        else:  # all_visitors
+            # Get all feedback grouped by visitor
+            c.execute('SELECT visitor_id, content, timestamp, project FROM feedback WHERE visitor_id != "anonymous" ORDER BY visitor_id, timestamp')
+            all_data = c.fetchall()
+            
+            if len(all_data) < 5:
+                return jsonify({'error': 'Not enough visitor data for visualization'}), 400
+            
+            # Group by visitor and filter visitors with multiple entries
+            visitor_data = defaultdict(list)
+            for visitor_id, content, timestamp, project in all_data:
+                visitor_data[visitor_id].append({
+                    'content': content,
+                    'timestamp': timestamp,
+                    'project': project
+                })
+            
+            # Keep only visitors with multiple entries
+            multi_entry_visitors = {k: v for k, v in visitor_data.items() if len(v) > 1}
+            
+            if len(multi_entry_visitors) < 2:
+                return jsonify({'error': 'Not enough visitors with multiple entries'}), 400
+            
+            all_texts = []
+            text_metadata = []
+            
+            for visitor_id, entries in multi_entry_visitors.items():
+                for entry in entries:
+                    all_texts.append(entry['content'])
+                    text_metadata.append({
+                        'visitor_id': visitor_id,
+                        'timestamp': entry['timestamp'],
+                        'project': entry['project']
+                    })
+            
+            # Compute embeddings
+            print(f"Computing embeddings for {len(all_texts)} visitor texts...")
+            embeddings = embedding_model.encode(all_texts, show_progress_bar=True)
+            
+            # Apply UMAP
+            print("Applying UMAP dimensionality reduction...")
+            umap_reducer = umap.UMAP(n_components=2, random_state=42, n_neighbors=min(15, len(embeddings)-1))
+            umap_embeddings = umap_reducer.fit_transform(embeddings)
+            
+            # Create visualization
+            plt.figure(figsize=(16, 12))
+            plt.style.use('dark_background')
+            
+            # Create color map for visitors
+            visitor_names = list(multi_entry_visitors.keys())
+            colors = plt.cm.tab20(np.linspace(0, 1, len(visitor_names)))
+            visitor_colors = dict(zip(visitor_names, colors))
+            
+            # Plot points for each visitor
+            for i, (x, y) in enumerate(umap_embeddings):
+                visitor = text_metadata[i]['visitor_id']
+                plt.scatter(x, y, c=[visitor_colors[visitor]], s=60, alpha=0.7, 
+                           edgecolors='white', linewidth=0.5)
+            
+            # Draw trajectory lines for each visitor
+            for visitor in visitor_names:
+                visitor_indices = [i for i, meta in enumerate(text_metadata) if meta['visitor_id'] == visitor]
+                if len(visitor_indices) > 1:
+                    visitor_coords = umap_embeddings[visitor_indices]
+                    plt.plot(visitor_coords[:, 0], visitor_coords[:, 1], 
+                            color=visitor_colors[visitor], alpha=0.4, linewidth=2, linestyle='-')
+                    
+                    # Annotate start and end points
+                    start_x, start_y = visitor_coords[0]
+                    end_x, end_y = visitor_coords[-1]
+                    plt.annotate('●', (start_x, start_y), fontsize=12, color=visitor_colors[visitor], ha='center')
+                    plt.annotate('◆', (end_x, end_y), fontsize=12, color=visitor_colors[visitor], ha='center')
+            
+            plt.title('UMAP Trajectories: All Visitors', fontsize=16, color='white', pad=20)
+            plt.xlabel('UMAP Dimension 1', fontsize=12, color='white')
+            plt.ylabel('UMAP Dimension 2', fontsize=12, color='white')
+            
+            title = "All Visitors Trajectories"
         
         plt.tight_layout()
         
@@ -825,28 +939,37 @@ def admin_compute_embeddings():
         
         # Prepare response data
         trajectory_data = []
-        for i, (text, timestamp, meta) in enumerate(zip(texts, timestamps, third_column)):
+        for i, (text, meta) in enumerate(zip(all_texts, text_metadata)):
             trajectory_data.append({
                 'index': i + 1,
                 'text': text[:100] + '...' if len(text) > 100 else text,
                 'full_text': text,
-                'timestamp': timestamp,
+                'timestamp': meta['timestamp'],
                 'umap_x': float(umap_embeddings[i, 0]),
                 'umap_y': float(umap_embeddings[i, 1]),
-                'metadata': meta  # visitor_id for project trajectory, project for visitor trajectory
+                'project': meta.get('project', ''),
+                'visitor_id': meta.get('visitor_id', ''),
+                'metadata': meta
             })
         
-        return jsonify({
+        result = {
             'success': True,
-            'trajectory_type': trajectory_type,
-            'target_id': target_id,
+            'view_type': view_type,
             'title': title,
             'plot_image': img_base64,
             'data_points': len(trajectory_data),
             'trajectory_data': trajectory_data
-        })
+        }
+        
+        # Cache the result
+        embeddings_cache[cache_key] = result
+        print(f"Cached embeddings for {view_type}")
+        
+        conn.close()
+        return jsonify(result)
         
     except Exception as e:
+        conn.close()
         return jsonify({'error': f'Embedding computation failed: {str(e)}'}), 500
 
 @app.route('/api/exquisite_corpse')
