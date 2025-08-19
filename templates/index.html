@@ -819,13 +819,6 @@
         createFloatingFragments();
     }
     
-    // Check if user has seen intro before
-    window.addEventListener('DOMContentLoaded', function() {
-        if (localStorage.getItem('machinic_encounters_seen') === 'true') {
-            document.getElementById('introOverlay').classList.add('hidden');
-            createFloatingFragments();
-        }
-    });
     
     function closeGuide() {
         document.getElementById('guideOverlay').classList.remove('show');
@@ -910,61 +903,69 @@
         }
     }
     
-    // Exhibition feedback form
-    const exhibitionForm = document.getElementById('exhibitionFeedbackForm');
-    if (exhibitionForm) {
-        exhibitionForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const comment = document.getElementById('exhibitionComment').value.trim();
-            const statusDiv = document.getElementById('exhibitionFeedbackStatus');
-            const submitButton = exhibitionForm.querySelector('button[type="submit"]');
-            
-            if (!comment) {
-                statusDiv.textContent = 'Please enter your thoughts before submitting.';
-                statusDiv.className = 'error';
-                return;
-            }
-            
-            // Disable button and show loading
-            submitButton.disabled = true;
-            submitButton.textContent = 'Sharing...';
-            statusDiv.textContent = '';
-            statusDiv.className = '';
-            
-            // Submit feedback
-            fetch('/feedback', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    project: 'exhibition_general',
-                    content: comment,
-                    visitor_id: visitorId
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'ok') {
-                    statusDiv.textContent = 'Thank you for sharing your reflection!';
-                    statusDiv.className = 'success';
-                    document.getElementById('exhibitionComment').value = '';
-                } else {
-                    throw new Error(data.error || 'Failed to submit feedback');
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if user has seen intro before
+        if (localStorage.getItem('machinic_encounters_seen') === 'true') {
+            document.getElementById('introOverlay').classList.add('hidden');
+            createFloatingFragments();
+        }
+
+        // Exhibition feedback form
+        const exhibitionForm = document.getElementById('exhibitionFeedbackForm');
+        if (exhibitionForm) {
+            exhibitionForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const comment = document.getElementById('exhibitionComment').value.trim();
+                const statusDiv = document.getElementById('exhibitionFeedbackStatus');
+                const submitButton = exhibitionForm.querySelector('button[type="submit"]');
+                
+                if (!comment) {
+                    statusDiv.textContent = 'Please enter your thoughts before submitting.';
+                    statusDiv.className = 'error';
+                    return;
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                statusDiv.textContent = 'Error submitting feedback. Please try again.';
-                statusDiv.className = 'error';
-            })
-            .finally(() => {
-                submitButton.disabled = false;
-                submitButton.textContent = 'Share Reflection';
+                
+                // Disable button and show loading
+                submitButton.disabled = true;
+                submitButton.textContent = 'Sharing...';
+                statusDiv.textContent = '';
+                statusDiv.className = '';
+                
+                // Submit feedback
+                fetch('/feedback', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        project: 'exhibition_general',
+                        content: comment,
+                        visitor_id: visitorId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'ok') {
+                        statusDiv.textContent = 'Thank you for sharing your reflection!';
+                        statusDiv.className = 'success';
+                        document.getElementById('exhibitionComment').value = '';
+                    } else {
+                        throw new Error(data.error || 'Failed to submit feedback');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    statusDiv.textContent = 'Error submitting feedback. Please try again.';
+                    statusDiv.className = 'error';
+                })
+                .finally(() => {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Share Reflection';
+                });
             });
-        });
-    }
+        }
+    });
 
 </script>
 {% endblock %}
