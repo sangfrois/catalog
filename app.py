@@ -1389,5 +1389,3 @@ def handle_disconnect():
     print(f'Client disconnected. Active presences: {active_visitors}')
     socketio.emit('update_visitor_count', {'count': active_visitors})
 
-if __name__ == '__main__':
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
