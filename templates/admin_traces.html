@@ -966,6 +966,12 @@
                 return path;
             }
             
+            // Calculate line thickness based on number of trajectories (inversely proportional)
+            const numTrajectories = vizData.trajectories.length;
+            const baseThickness = Math.max(2, Math.min(8, 20 / numTrajectories));
+            const projectThickness = baseThickness * 1.5;
+            const visitorThickness = baseThickness;
+            
             // Render trajectories
             vizData.trajectories.forEach((trajectory, index) => {
                 const trajectoryGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -977,33 +983,38 @@
                     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                     path.setAttribute('d', createSmoothPath(trajectory.points));
                     path.setAttribute('stroke', trajectory.color);
-                    path.setAttribute('stroke-width', trajectory.type === 'project' ? '2' : '1.5');
-                    path.setAttribute('stroke-opacity', '0.6');
+                    path.setAttribute('stroke-width', trajectory.type === 'project' ? projectThickness : visitorThickness);
+                    path.setAttribute('stroke-opacity', '0.7');
                     path.setAttribute('fill', 'none');
                     path.setAttribute('stroke-dasharray', trajectory.type === 'project' ? '5,3' : 'none');
                     trajectoryGroup.appendChild(path);
                 }
+                
+                // Calculate point sizes based on line thickness
+                const basePointSize = Math.max(3, baseThickness * 0.8);
+                const projectPointSize = basePointSize * 1.2;
+                const visitorPointSize = basePointSize;
                 
                 // Draw points
                 trajectory.points.forEach((point, pointIndex) => {
                     const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                     circle.setAttribute('cx', point[0] * plotWidth);
                     circle.setAttribute('cy', (1 - point[1]) * plotHeight);
-                    circle.setAttribute('r', trajectory.type === 'project' ? '4' : '3');
+                    circle.setAttribute('r', trajectory.type === 'project' ? projectPointSize : visitorPointSize);
                     circle.setAttribute('fill', trajectory.color);
                     circle.setAttribute('stroke', 'white');
-                    circle.setAttribute('stroke-width', '1');
-                    circle.setAttribute('opacity', '0.8');
+                    circle.setAttribute('stroke-width', Math.max(1, baseThickness * 0.2));
+                    circle.setAttribute('opacity', '0.9');
                     
                     // Add hover effects
                     circle.style.cursor = 'pointer';
                     circle.addEventListener('mouseenter', () => {
-                        circle.setAttribute('r', trajectory.type === 'project' ? '6' : '5');
+                        circle.setAttribute('r', (trajectory.type === 'project' ? projectPointSize : visitorPointSize) * 1.4);
                         circle.setAttribute('opacity', '1');
                     });
                     circle.addEventListener('mouseleave', () => {
-                        circle.setAttribute('r', trajectory.type === 'project' ? '4' : '3');
-                        circle.setAttribute('opacity', '0.8');
+                        circle.setAttribute('r', trajectory.type === 'project' ? projectPointSize : visitorPointSize);
+                        circle.setAttribute('opacity', '0.9');
                     });
                     
                     // Add tooltip
