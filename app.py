@@ -444,12 +444,13 @@ def admin_traces():
 
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
-    c.execute('SELECT project, content, timestamp, visitor_id FROM feedback ORDER BY project, timestamp DESC')
+    c.execute('SELECT id, project, content, timestamp, visitor_id FROM feedback ORDER BY project, timestamp DESC')
     
     feedback_by_project = defaultdict(list)
     for row in c.fetchall():
-        project, content, timestamp, visitor_id = row
+        feedback_id, project, content, timestamp, visitor_id = row
         feedback_by_project[project].append({
+            'id': feedback_id,
             'content': content,
             'timestamp': timestamp,
             'visitor_id': visitor_id
@@ -1165,6 +1166,28 @@ def delete_feedback(visitor_id, feedback_id):
     
     # Delete the feedback
     c.execute('DELETE FROM feedback WHERE id = ? AND visitor_id = ?', (feedback_id, visitor_id))
+    conn.commit()
+    conn.close()
+    
+    return jsonify({'status': 'deleted'})
+
+@app.route('/admin/feedback/<int:feedback_id>', methods=['DELETE'])
+def admin_delete_feedback(feedback_id):
+    """Admin endpoint to delete any feedback entry."""
+    if request.args.get('token') != ADMIN_TOKEN:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    
+    # Check if feedback exists
+    c.execute('SELECT id FROM feedback WHERE id = ?', (feedback_id,))
+    if not c.fetchone():
+        conn.close()
+        return jsonify({'error': 'Feedback not found'}), 404
+    
+    # Delete the feedback
+    c.execute('DELETE FROM feedback WHERE id = ?', (feedback_id,))
     conn.commit()
     conn.close()
     
