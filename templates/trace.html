@@ -377,6 +377,17 @@
         <div id="feedbackList">
             <div class="empty-state">No thoughts shared yet</div>
         </div>
+
+        <script>
+        document.getElementById('feedbackList').addEventListener('click', function(e) {
+            if (e.target.classList.contains('delete-feedback')) {
+                const id = e.target.closest('.feedback-item').dataset.id;
+                fetch(`/api/feedback/${visitorId}/${id}`, { method: 'DELETE' })
+                    .then(res => res.ok && loadTrace())
+                    .catch(console.error);
+            }
+        });
+        </script>
     </div>
 </div>
 {% endblock %}
