@@ -268,6 +268,18 @@
             font-size: 0.8em;
             color: #666;
         }
+        
+        .traces-container {
+            background: #e8f4f8;
+            padding: 1.5em;
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .traces-container h3 {
+            margin-top: 0;
+            color: #1976D2;
+        }
     </style>
 </head>
 <body>
@@ -278,6 +290,7 @@
         <button class="tab-btn" onclick="switchTab('stats')">Statistics</button>
         <button class="tab-btn" onclick="switchTab('export')">Export Data</button>
         <button class="tab-btn" onclick="switchTab('security')">Security</button>
+        <button class="tab-btn" onclick="switchTab('traces')">All Traces</button>
     </div>
 
     <div id="embeddingsTab" class="tab-content active">
@@ -408,23 +421,28 @@
         </div>
     </div>
 
-    {% for project_name, feedbacks in projects_feedback %}
-    <div class="project-container">
-        <h2>{{ PROJECTS.get(project_name, {'title': project_name})['title'] }}</h2>
-        {% if feedbacks %}
-            {% for feedback in feedbacks %}
-            <div class="feedback-item">
-                <p>{{ feedback.content }}</p>
-                <div class="meta">
-                    <strong>Visitor:</strong> {{ feedback.visitor_id }} | <strong>Timestamp:</strong> {{ feedback.timestamp }}
-                </div>
+    <div id="tracesTab" class="tab-content">
+        <div class="traces-container">
+            <h3>📝 All Feedback Traces</h3>
+            {% for project_name, feedbacks in projects_feedback %}
+            <div class="project-container">
+                <h2>{{ PROJECTS.get(project_name, {'title': project_name})['title'] }}</h2>
+                {% if feedbacks %}
+                    {% for feedback in feedbacks %}
+                    <div class="feedback-item">
+                        <p>{{ feedback.content }}</p>
+                        <div class="meta">
+                            <strong>Visitor:</strong> {{ feedback.visitor_id }} | <strong>Timestamp:</strong> {{ feedback.timestamp }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No feedback for this project yet.</p>
+                {% endif %}
             </div>
             {% endfor %}
-        {% else %}
-            <p>No feedback for this project yet.</p>
-        {% endif %}
+        </div>
     </div>
-    {% endfor %}
 
     <script>
         const PROJECTS = {
