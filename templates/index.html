@@ -721,14 +721,24 @@
         window.location.href = `/project/${projectId}`;
     }
 
-    document.getElementById('readMoreBtn').addEventListener('click', function() {
-        document.getElementById('shortIntro').style.display = 'none';
-        document.getElementById('fullIntro').style.display = 'block';
-    });
-    
-    document.getElementById('readLessBtn').addEventListener('click', function() {
-        document.getElementById('shortIntro').style.display = 'block';
-        document.getElementById('fullIntro').style.display = 'none';
+    // Add event listeners for read more/less functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const readMoreBtn = document.getElementById('readMoreBtn');
+        const readLessBtn = document.getElementById('readLessBtn');
+        
+        if (readMoreBtn) {
+            readMoreBtn.addEventListener('click', function() {
+                document.getElementById('shortIntro').style.display = 'none';
+                document.getElementById('fullIntro').style.display = 'block';
+            });
+        }
+        
+        if (readLessBtn) {
+            readLessBtn.addEventListener('click', function() {
+                document.getElementById('shortIntro').style.display = 'block';
+                document.getElementById('fullIntro').style.display = 'none';
+            });
+        }
     });
 </script>
 {% endblock %}
