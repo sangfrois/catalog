@@ -91,40 +91,320 @@
             color: #0c5460; 
             border: 1px solid #bee5eb; 
         }
+        
+        .admin-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 2em;
+            border-bottom: 2px solid #ddd;
+        }
+        
+        .tab-btn {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            color: #666;
+            border-radius: 5px 5px 0 0;
+        }
+        
+        .tab-btn.active {
+            background: #2196F3;
+            color: white;
+            border-color: #2196F3;
+        }
+        
+        .tab-btn:hover:not(.active) {
+            background: #e9ecef;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .stats-container, .export-container, .security-container {
+            background: #e8f4f8;
+            padding: 1.5em;
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1em;
+            margin: 1em 0;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1em;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-card h4 {
+            margin: 0 0 0.5em 0;
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2196F3;
+        }
+        
+        .stat-text {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2196F3;
+        }
+        
+        .project-breakdown {
+            margin-top: 2em;
+            background: white;
+            padding: 1em;
+            border-radius: 5px;
+        }
+        
+        .project-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5em 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .project-stat:last-child {
+            border-bottom: none;
+        }
+        
+        .export-options {
+            background: white;
+            padding: 1em;
+            border-radius: 5px;
+            margin: 1em 0;
+        }
+        
+        .security-section {
+            background: white;
+            padding: 1em;
+            border-radius: 5px;
+            margin: 1em 0;
+        }
+        
+        .security-section h4 {
+            margin-top: 0;
+            color: #d32f2f;
+        }
+        
+        .blocked-ip {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5em;
+            background: #ffebee;
+            border: 1px solid #ffcdd2;
+            border-radius: 3px;
+            margin: 0.5em 0;
+        }
+        
+        .unblock-btn {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .activity-item {
+            padding: 0.5em;
+            border-bottom: 1px solid #eee;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        
+        .trajectory-details {
+            margin-top: 1em;
+            max-height: 300px;
+            overflow-y: auto;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .trajectory-point {
+            padding: 0.5em;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9em;
+        }
+        
+        .trajectory-point:last-child {
+            border-bottom: none;
+        }
+        
+        .trajectory-point .index {
+            font-weight: bold;
+            color: #2196F3;
+            margin-right: 0.5em;
+        }
+        
+        .trajectory-point .text {
+            color: #333;
+            margin: 0.25em 0;
+        }
+        
+        .trajectory-point .meta {
+            font-size: 0.8em;
+            color: #666;
+        }
     </style>
 </head>
 <body>
     <h1>All Feedback Traces by Project</h1>
     
-    <div class="embedding-controls">
-        <h3>🧠 UMAP Trajectory Analysis</h3>
-        <p>Compute embeddings and visualize visitor or project trajectories in latent space.</p>
-        
-        <div class="control-group">
-            <label for="trajectoryType">Trajectory Type:</label>
-            <select id="trajectoryType" onchange="updateTargetOptions()">
-                <option value="project">By Project</option>
-                <option value="visitor">By Visitor</option>
-            </select>
-        </div>
-        
-        <div class="control-group">
-            <label for="targetId">Target:</label>
-            <select id="targetId">
-                <option value="">Select...</option>
-            </select>
-        </div>
-        
-        <button class="compute-btn" onclick="computeEmbeddings()">Compute UMAP Trajectory</button>
-        
-        <div id="statusMessage"></div>
-        
-        <div id="resultContainer" class="result-container">
-            <h4 id="resultTitle"></h4>
-            <div class="trajectory-plot">
-                <img id="trajectoryPlot" src="" alt="UMAP Trajectory">
+    <div class="admin-tabs">
+        <button class="tab-btn active" onclick="switchTab('embeddings')">UMAP Analysis</button>
+        <button class="tab-btn" onclick="switchTab('stats')">Statistics</button>
+        <button class="tab-btn" onclick="switchTab('export')">Export Data</button>
+        <button class="tab-btn" onclick="switchTab('security')">Security</button>
+    </div>
+
+    <div id="embeddingsTab" class="tab-content active">
+        <div class="embedding-controls">
+            <h3>🧠 UMAP Trajectory Analysis</h3>
+            <p>Compute embeddings and visualize visitor or project trajectories in latent space.</p>
+            
+            <div class="control-group">
+                <label for="trajectoryType">Trajectory Type:</label>
+                <select id="trajectoryType" onchange="updateTargetOptions()">
+                    <option value="project">By Project</option>
+                    <option value="visitor">By Visitor</option>
+                </select>
             </div>
-            <p><strong>Data Points:</strong> <span id="dataPointCount"></span></p>
+            
+            <div class="control-group">
+                <label for="targetId">Target:</label>
+                <select id="targetId">
+                    <option value="">Select...</option>
+                </select>
+            </div>
+            
+            <button class="compute-btn" onclick="computeEmbeddings()">Compute UMAP Trajectory</button>
+            
+            <div id="statusMessage"></div>
+            
+            <div id="resultContainer" class="result-container">
+                <h4 id="resultTitle"></h4>
+                <div class="trajectory-plot">
+                    <img id="trajectoryPlot" src="" alt="UMAP Trajectory">
+                </div>
+                <p><strong>Data Points:</strong> <span id="dataPointCount"></span></p>
+                <div id="trajectoryDetails" class="trajectory-details"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="statsTab" class="tab-content">
+        <div class="stats-container">
+            <h3>📊 Live Statistics</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Total Feedback</h4>
+                    <div class="stat-number" id="totalFeedback">-</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Unique Visitors</h4>
+                    <div class="stat-number" id="uniqueVisitors">-</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Most Active Project</h4>
+                    <div class="stat-text" id="mostActiveProject">-</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Average Words/Feedback</h4>
+                    <div class="stat-number" id="avgWords">-</div>
+                </div>
+            </div>
+            <button class="compute-btn" onclick="loadStats()">Refresh Statistics</button>
+            
+            <div class="project-breakdown">
+                <h4>Project Breakdown</h4>
+                <div id="projectStats"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="exportTab" class="tab-content">
+        <div class="export-container">
+            <h3>📁 Export Data</h3>
+            <p>Export feedback data for analysis in external tools.</p>
+            
+            <div class="export-options">
+                <div class="control-group">
+                    <label for="exportFormat">Format:</label>
+                    <select id="exportFormat">
+                        <option value="csv">CSV</option>
+                        <option value="json">JSON</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="exportProject">Project Filter:</label>
+                    <select id="exportProject">
+                        <option value="">All Projects</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="exportDateFrom">From Date:</label>
+                    <input type="date" id="exportDateFrom">
+                </div>
+                
+                <div class="control-group">
+                    <label for="exportDateTo">To Date:</label>
+                    <input type="date" id="exportDateTo">
+                </div>
+            </div>
+            
+            <button class="compute-btn" onclick="exportData()">Export Data</button>
+        </div>
+    </div>
+
+    <div id="securityTab" class="tab-content">
+        <div class="security-container">
+            <h3>🔒 Security Management</h3>
+            
+            <div class="security-section">
+                <h4>Blocked IPs</h4>
+                <div id="blockedIPs">Loading...</div>
+                <button class="compute-btn" onclick="loadBlockedIPs()">Refresh</button>
+            </div>
+            
+            <div class="security-section">
+                <h4>Recent Activity</h4>
+                <div id="recentActivity">Loading...</div>
+                <button class="compute-btn" onclick="loadRecentActivity()">Refresh</button>
+            </div>
+            
+            <div class="security-section">
+                <h4>Manual IP Block</h4>
+                <div class="control-group">
+                    <label for="blockIP">IP Address:</label>
+                    <input type="text" id="blockIP" placeholder="192.168.1.1">
+                </div>
+                <button class="compute-btn" onclick="blockIP()">Block IP</button>
+            </div>
         </div>
     </div>
 
@@ -228,6 +508,25 @@
                     document.getElementById('resultTitle').textContent = data.title;
                     document.getElementById('trajectoryPlot').src = `data:image/png;base64,${data.plot_image}`;
                     document.getElementById('dataPointCount').textContent = data.data_points;
+                    
+                    // Show trajectory details
+                    const detailsDiv = document.getElementById('trajectoryDetails');
+                    detailsDiv.innerHTML = '<h5>Trajectory Points:</h5>';
+                    
+                    data.trajectory_data.forEach(point => {
+                        const pointDiv = document.createElement('div');
+                        pointDiv.className = 'trajectory-point';
+                        pointDiv.innerHTML = `
+                            <span class="index">${point.index}.</span>
+                            <div class="text">${point.text}</div>
+                            <div class="meta">
+                                ${point.timestamp} | ${trajectoryType === 'project' ? 'Visitor: ' + point.metadata : 'Project: ' + point.metadata}
+                                | UMAP: (${point.umap_x.toFixed(2)}, ${point.umap_y.toFixed(2)})
+                            </div>
+                        `;
+                        detailsDiv.appendChild(pointDiv);
+                    });
+                    
                     document.getElementById('resultContainer').style.display = 'block';
                 } else {
                     showStatus(`Error: ${data.error}`, 'error');
@@ -244,6 +543,220 @@
         
         // Initialize target options on page load
         updateTargetOptions();
+        
+        // Initialize export project options
+        Object.entries(PROJECTS).forEach(([id, title]) => {
+            const option = document.createElement('option');
+            option.value = id;
+            option.textContent = `${id} - ${title}`;
+            document.getElementById('exportProject').appendChild(option);
+        });
+        
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+            
+            // Load data for specific tabs
+            if (tabName === 'stats') {
+                loadStats();
+            } else if (tabName === 'security') {
+                loadBlockedIPs();
+                loadRecentActivity();
+            }
+        }
+        
+        function loadStats() {
+            const token = new URLSearchParams(window.location.search).get('token');
+            
+            fetch(`/admin/stats?token=${token}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('totalFeedback').textContent = data.total_feedback;
+                    document.getElementById('uniqueVisitors').textContent = data.unique_visitors;
+                    document.getElementById('mostActiveProject').textContent = data.most_active_project;
+                    document.getElementById('avgWords').textContent = data.avg_words;
+                    
+                    // Project breakdown
+                    const projectStatsDiv = document.getElementById('projectStats');
+                    projectStatsDiv.innerHTML = '';
+                    
+                    data.project_stats.forEach(stat => {
+                        const projectDiv = document.createElement('div');
+                        projectDiv.className = 'project-stat';
+                        projectDiv.innerHTML = `
+                            <span>${stat.project} (${PROJECTS[stat.project] || stat.project})</span>
+                            <span><strong>${stat.count}</strong> feedback</span>
+                        `;
+                        projectStatsDiv.appendChild(projectDiv);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading stats:', error);
+                });
+        }
+        
+        function exportData() {
+            const format = document.getElementById('exportFormat').value;
+            const project = document.getElementById('exportProject').value;
+            const dateFrom = document.getElementById('exportDateFrom').value;
+            const dateTo = document.getElementById('exportDateTo').value;
+            const token = new URLSearchParams(window.location.search).get('token');
+            
+            let url = `/admin/export?token=${token}&format=${format}`;
+            if (project) url += `&project=${project}`;
+            if (dateFrom) url += `&date_from=${dateFrom}`;
+            if (dateTo) url += `&date_to=${dateTo}`;
+            
+            // Create a temporary link to download the file
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `feedback_export.${format}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        function loadBlockedIPs() {
+            const token = new URLSearchParams(window.location.search).get('token');
+            
+            fetch(`/admin/security/blocked_ips?token=${token}`)
+                .then(response => response.json())
+                .then(data => {
+                    const blockedIPsDiv = document.getElementById('blockedIPs');
+                    
+                    if (data.blocked_ips.length === 0) {
+                        blockedIPsDiv.innerHTML = '<p>No IPs currently blocked.</p>';
+                        return;
+                    }
+                    
+                    blockedIPsDiv.innerHTML = '';
+                    data.blocked_ips.forEach(blockedIP => {
+                        const ipDiv = document.createElement('div');
+                        ipDiv.className = 'blocked-ip';
+                        ipDiv.innerHTML = `
+                            <span>
+                                <strong>${blockedIP.ip}</strong> 
+                                (${blockedIP.violations} violations, ${blockedIP.remaining_minutes}min remaining)
+                            </span>
+                            <button class="unblock-btn" onclick="unblockIP('${blockedIP.ip}')">Unblock</button>
+                        `;
+                        blockedIPsDiv.appendChild(ipDiv);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading blocked IPs:', error);
+                    document.getElementById('blockedIPs').innerHTML = '<p>Error loading blocked IPs.</p>';
+                });
+        }
+        
+        function loadRecentActivity() {
+            const token = new URLSearchParams(window.location.search).get('token');
+            
+            fetch(`/admin/security/recent_activity?token=${token}`)
+                .then(response => response.json())
+                .then(data => {
+                    const activityDiv = document.getElementById('recentActivity');
+                    
+                    if (data.recent_activity.length === 0) {
+                        activityDiv.innerHTML = '<p>No recent activity.</p>';
+                        return;
+                    }
+                    
+                    activityDiv.innerHTML = '';
+                    data.recent_activity.forEach(activity => {
+                        const activityItem = document.createElement('div');
+                        activityItem.className = 'activity-item';
+                        
+                        if (activity.type === 'feedback') {
+                            activityItem.innerHTML = `
+                                <strong>${activity.timestamp}</strong> - 
+                                Feedback from ${activity.visitor_id} on ${activity.project}: 
+                                "${activity.content_preview}"
+                            `;
+                        } else if (activity.type === 'security_violation') {
+                            activityItem.innerHTML = `
+                                <strong>SECURITY</strong> - 
+                                IP ${activity.ip} has ${activity.violations} violations
+                            `;
+                            activityItem.style.color = '#d32f2f';
+                        }
+                        
+                        activityDiv.appendChild(activityItem);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading recent activity:', error);
+                    document.getElementById('recentActivity').innerHTML = '<p>Error loading recent activity.</p>';
+                });
+        }
+        
+        function unblockIP(ip) {
+            const token = new URLSearchParams(window.location.search).get('token');
+            
+            fetch(`/admin/unblock?token=${token}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ ip: ip })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status) {
+                    loadBlockedIPs(); // Refresh the list
+                    showStatus(`IP ${ip} unblocked successfully`, 'success');
+                } else {
+                    showStatus(`Error unblocking IP: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                showStatus(`Network error: ${error.message}`, 'error');
+            });
+        }
+        
+        function blockIP() {
+            const ip = document.getElementById('blockIP').value.trim();
+            if (!ip) {
+                showStatus('Please enter an IP address', 'error');
+                return;
+            }
+            
+            const token = new URLSearchParams(window.location.search).get('token');
+            
+            fetch(`/admin/security/block_ip?token=${token}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ ip: ip })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status) {
+                    document.getElementById('blockIP').value = '';
+                    loadBlockedIPs(); // Refresh the list
+                    showStatus(data.status, 'success');
+                } else {
+                    showStatus(`Error: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                showStatus(`Network error: ${error.message}`, 'error');
+            });
+        }
     </script>
 </body>
 </html>

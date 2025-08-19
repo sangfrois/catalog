@@ -530,6 +530,204 @@ def process_text_bilingual(text):
     
     return unique_keywords
 
+@app.route('/admin/stats')
+def admin_stats():
+    if request.args.get('token') != ADMIN_TOKEN:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    
+    # Total feedback count
+    c.execute('SELECT COUNT(*) FROM feedback')
+    total_feedback = c.fetchone()[0]
+    
+    # Unique visitors
+    c.execute('SELECT COUNT(DISTINCT visitor_id) FROM feedback')
+    unique_visitors = c.fetchone()[0]
+    
+    # Average words per feedback
+    c.execute('SELECT content FROM feedback')
+    all_content = [row[0] for row in c.fetchall()]
+    avg_words = sum(len(content.split()) for content in all_content) / len(all_content) if all_content else 0
+    
+    # Project breakdown
+    c.execute('SELECT project, COUNT(*) as count FROM feedback GROUP BY project ORDER BY count DESC')
+    project_stats = [{'project': row[0], 'count': row[1]} for row in c.fetchall()]
+    
+    # Most active project
+    most_active = project_stats[0]['project'] if project_stats else 'None'
+    
+    # Recent activity (last 24 hours)
+    c.execute('SELECT COUNT(*) FROM feedback WHERE datetime(timestamp) > datetime("now", "-1 day")')
+    recent_feedback = c.fetchone()[0]
+    
+    conn.close()
+    
+    return jsonify({
+        'total_feedback': total_feedback,
+        'unique_visitors': unique_visitors,
+        'most_active_project': most_active,
+        'avg_words': round(avg_words, 1),
+        'project_stats': project_stats,
+        'recent_feedback_24h': recent_feedback
+    })
+
+@app.route('/admin/export')
+def admin_export():
+    if request.args.get('token') != ADMIN_TOKEN:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    format_type = request.args.get('format', 'csv')
+    project_filter = request.args.get('project', '')
+    date_from = request.args.get('date_from', '')
+    date_to = request.args.get('date_to', '')
+    
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    
+    # Build query with filters
+    query = 'SELECT project, content, timestamp, visitor_id FROM feedback WHERE 1=1'
+    params = []
+    
+    if project_filter:
+        query += ' AND project = ?'
+        params.append(project_filter)
+    
+    if date_from:
+        query += ' AND date(timestamp) >= ?'
+        params.append(date_from)
+    
+    if date_to:
+        query += ' AND date(timestamp) <= ?'
+        params.append(date_to)
+    
+    query += ' ORDER BY timestamp'
+    
+    c.execute(query, params)
+    data = c.fetchall()
+    conn.close()
+    
+    if format_type == 'json':
+        export_data = []
+        for row in data:
+            export_data.append({
+                'project': row[0],
+                'content': row[1],
+                'timestamp': row[2],
+                'visitor_id': row[3]
+            })
+        
+        response = make_response(jsonify(export_data))
+        response.headers['Content-Disposition'] = 'attachment; filename=feedback_export.json'
+        response.headers['Content-Type'] = 'application/json'
+        return response
+    
+    else:  # CSV
+        import csv
+        import io
+        
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Write header
+        writer.writerow(['Project', 'Content', 'Timestamp', 'Visitor ID'])
+        
+        # Write data with CSV injection protection
+        for row in data:
+            safe_row = [sanitize_csv_value(str(cell)) for cell in row]
+            writer.writerow(safe_row)
+        
+        response = make_response(output.getvalue())
+        response.headers['Content-Disposition'] = 'attachment; filename=feedback_export.csv'
+        response.headers['Content-Type'] = 'text/csv'
+        return response
+
+@app.route('/admin/security/blocked_ips')
+def admin_blocked_ips():
+    if request.args.get('token') != ADMIN_TOKEN:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    current_time = time.time()
+    blocked_ips = []
+    
+    for ip, block_time in ip_block_time.items():
+        remaining_time = IP_BLOCK_DURATION - (current_time - block_time)
+        if remaining_time > 0:
+            blocked_ips.append({
+                'ip': ip,
+                'violations': ip_violations.get(ip, 0),
+                'remaining_minutes': int(remaining_time / 60),
+                'blocked_at': datetime.fromtimestamp(block_time).isoformat()
+            })
+    
+    return jsonify({'blocked_ips': blocked_ips})
+
+@app.route('/admin/security/block_ip', methods=['POST'])
+def admin_block_ip():
+    if request.args.get('token') != ADMIN_TOKEN:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    data = request.json
+    ip_to_block = data.get('ip')
+    
+    if not ip_to_block:
+        return jsonify({'error': 'IP address required'}), 400
+    
+    # Validate IP format
+    import re
+    if not re.match(r'^(\d{1,3}\.){3}\d{1,3}$', ip_to_block):
+        return jsonify({'error': 'Invalid IP format'}), 400
+    
+    # Block the IP
+    ip_block_time[ip_to_block] = time.time()
+    ip_violations[ip_to_block] = IP_BLOCK_THRESHOLD
+    
+    return jsonify({'status': f'IP {ip_to_block} has been blocked'})
+
+@app.route('/admin/security/recent_activity')
+def admin_recent_activity():
+    if request.args.get('token') != ADMIN_TOKEN:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    
+    # Get recent feedback with IP info (we don't store IPs, so this is limited)
+    c.execute('''
+        SELECT project, visitor_id, timestamp, 
+               substr(content, 1, 50) as content_preview
+        FROM feedback 
+        WHERE datetime(timestamp) > datetime("now", "-2 hours")
+        ORDER BY timestamp DESC 
+        LIMIT 20
+    ''')
+    
+    recent_activity = []
+    for row in c.fetchall():
+        recent_activity.append({
+            'project': row[0],
+            'visitor_id': row[1],
+            'timestamp': row[2],
+            'content_preview': row[3] + ('...' if len(row[3]) == 50 else ''),
+            'type': 'feedback'
+        })
+    
+    conn.close()
+    
+    # Add security events (violations, blocks)
+    current_time = time.time()
+    for ip, violations in ip_violations.items():
+        if violations > 0:
+            recent_activity.append({
+                'ip': ip,
+                'violations': violations,
+                'type': 'security_violation',
+                'timestamp': 'Recent'
+            })
+    
+    return jsonify({'recent_activity': recent_activity[:20]})
+
 @app.route('/admin/compute_embeddings', methods=['POST'])
 def admin_compute_embeddings():
     if request.args.get('token') != ADMIN_TOKEN:
