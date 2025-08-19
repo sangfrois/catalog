@@ -738,11 +738,14 @@ def admin_recent_activity():
 
 @app.route('/admin/compute_embeddings', methods=['POST'])
 def admin_compute_embeddings():
-    if request.args.get('token') != ADMIN_TOKEN:
+    token = request.args.get('token')
+    if not token or token != ADMIN_TOKEN:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    if not embedding_model:
-        return jsonify({'error': 'Embedding model not available'}), 500
+    # Try to load the model if it's not already loaded
+    model = load_embedding_model()
+    if not model:
+        return jsonify({'error': 'Embedding model not available. Please ensure sentence-transformers and torch are installed.'}), 500
     
     data = request.json
     trajectory_type = data.get('type', 'project')  # 'project' or 'visitor'
