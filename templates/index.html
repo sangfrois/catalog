@@ -889,22 +889,13 @@
             },
             body: JSON.stringify({
                 project: projectId,
-                visitor_id: getVisitorId()
+                visitor_id: visitorId
             })
         }).catch(err => console.log('Visit tracking failed:', err));
         
         window.location.href = `/project/${projectId}`;
     }
     
-    function getVisitorId() {
-        let visitorId = localStorage.getItem('visitor_id');
-        if (!visitorId) {
-            visitorId = 'visitor_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('visitor_id', visitorId);
-        }
-        return visitorId;
-    }
-
     function toggleExpanded() {
         const expandedContent = document.getElementById('expandedContent');
         const expandBtn = document.getElementById('expandBtn');
@@ -950,7 +941,7 @@
                 body: JSON.stringify({
                     project: 'exhibition_general',
                     content: comment,
-                    visitor_id: getVisitorId()
+                    visitor_id: visitorId
                 })
             })
             .then(response => response.json())
