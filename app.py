@@ -1019,13 +1019,13 @@ def admin_compute_embeddings():
             conn.close()
             return jsonify({'error': f'Failed to compute embeddings: {str(e)}'}), 500
         
-        # Apply UMAP with safer parameters
+        # Apply UMAP with safer parameters and consistent seed
         print("Applying UMAP dimensionality reduction...")
         try:
             n_neighbors = min(5, len(embeddings) - 1)
             umap_reducer = umap.UMAP(
                 n_components=2, 
-                random_state=42, 
+                random_state=12345,  # Fixed seed for consistent territories
                 n_neighbors=n_neighbors,
                 min_dist=0.1,
                 metric='cosine'
@@ -1193,11 +1193,11 @@ def get_semantic_territories():
         # Compute embeddings
         embeddings = embedding_model.encode(all_texts, show_progress_bar=False)
         
-        # Apply UMAP
+        # Apply UMAP with consistent seed for stable territories
         n_neighbors = min(8, len(embeddings) - 1)
         umap_reducer = umap.UMAP(
             n_components=2,
-            random_state=42,
+            random_state=12345,  # Fixed seed for consistent project territories
             n_neighbors=n_neighbors,
             min_dist=0.1,
             metric='cosine'
