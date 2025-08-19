@@ -646,7 +646,7 @@
     function enterExhibition() {
         document.getElementById('introOverlay').classList.add('hidden');
         // Mark as seen
-        localStorage.setItem('machinc_encounters_seen', 'true');
+        localStorage.setItem('machinic_encounters_seen', 'true');
         // Show guide after intro
         setTimeout(() => {
             document.getElementById('guideOverlay').classList.add('show');
@@ -657,7 +657,7 @@
     
     // Check if user has seen intro before
     window.addEventListener('DOMContentLoaded', function() {
-        if (localStorage.getItem('machinc_encounters_seen') === 'true') {
+        if (localStorage.getItem('machinic_encounters_seen') === 'true') {
             document.getElementById('introOverlay').classList.add('hidden');
             createFloatingFragments();
         }
@@ -717,28 +717,29 @@
     }
     
     function visitProject(projectId) {
-        trackVisit(projectId);
+        // Track the visit via API
+        fetch('/visit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                project: projectId,
+                visitor_id: getVisitorId()
+            })
+        }).catch(err => console.log('Visit tracking failed:', err));
+        
         window.location.href = `/project/${projectId}`;
     }
+    
+    function getVisitorId() {
+        let visitorId = localStorage.getItem('visitor_id');
+        if (!visitorId) {
+            visitorId = 'visitor_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('visitor_id', visitorId);
+        }
+        return visitorId;
+    }
 
-    // Add event listeners for read more/less functionality
-    document.addEventListener('DOMContentLoaded', function() {
-        const readMoreBtn = document.getElementById('readMoreBtn');
-        const readLessBtn = document.getElementById('readLessBtn');
-        
-        if (readMoreBtn) {
-            readMoreBtn.addEventListener('click', function() {
-                document.getElementById('shortIntro').style.display = 'none';
-                document.getElementById('fullIntro').style.display = 'block';
-            });
-        }
-        
-        if (readLessBtn) {
-            readLessBtn.addEventListener('click', function() {
-                document.getElementById('shortIntro').style.display = 'block';
-                document.getElementById('fullIntro').style.display = 'none';
-            });
-        }
-    });
 </script>
 {% endblock %}
