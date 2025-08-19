@@ -869,16 +869,26 @@
             svg.style.background = '#fafafa';
             svg.style.fontFamily = 'Inter, system-ui, sans-serif';
             
-            // Add title
+            // Add title and legend
             const titleElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             titleElement.setAttribute('x', width / 2);
-            titleElement.setAttribute('y', 30);
+            titleElement.setAttribute('y', 25);
             titleElement.setAttribute('text-anchor', 'middle');
-            titleElement.setAttribute('font-size', '16');
+            titleElement.setAttribute('font-size', '14');
             titleElement.setAttribute('font-weight', 'bold');
-            titleElement.setAttribute('fill', '#333');
-            titleElement.textContent = `UMAP Trajectories: ${title}`;
+            titleElement.setAttribute('fill', 'var(--primary)');
+            titleElement.textContent = 'Semantic Territories';
             svg.appendChild(titleElement);
+            
+            // Add explanation
+            const explanationElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            explanationElement.setAttribute('x', width / 2);
+            explanationElement.setAttribute('y', 45);
+            explanationElement.setAttribute('text-anchor', 'middle');
+            explanationElement.setAttribute('font-size', '10');
+            explanationElement.setAttribute('fill', 'var(--muted)');
+            explanationElement.textContent = 'Colored areas = projects • Dashed lines = visitor paths • Dots = reflections';
+            svg.appendChild(explanationElement);
             
             // Add axis labels
             const xLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
