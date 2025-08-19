@@ -523,6 +523,38 @@
     .logo-container img[src*="AppliedAI.png"] {
         filter: invert(1) grayscale(1);
     }
+
+    .expand-btn {
+        background: none;
+        border: 2px solid var(--accent);
+        color: var(--accent);
+        padding: 10px 20px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin: 2rem auto;
+        display: block;
+        font-family: 'JetBrains Mono', monospace;
+        letter-spacing: 1px;
+    }
+    
+    .expand-btn:hover {
+        background: var(--accent);
+        color: var(--secondary);
+        transform: translate(-2px, -2px);
+        box-shadow: 2px 2px 0 var(--accent);
+    }
+
+    .expanded-content {
+        display: none;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+    }
+
+    .expanded-content.show {
+        display: block;
+        opacity: 1;
+    }
 </style>
 {% endblock %}
 
@@ -739,6 +771,20 @@
             localStorage.setItem('visitor_id', visitorId);
         }
         return visitorId;
+    }
+
+    function toggleExpanded() {
+        const expandedContent = document.getElementById('expandedContent');
+        const expandBtn = document.getElementById('expandBtn');
+        
+        if (expandedContent.classList.contains('show')) {
+            expandedContent.classList.remove('show');
+            expandBtn.textContent = 'Read More';
+            expandBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            expandedContent.classList.add('show');
+            expandBtn.textContent = 'Read Less';
+        }
     }
 
 </script>
