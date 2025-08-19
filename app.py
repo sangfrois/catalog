@@ -14,9 +14,10 @@ from itertools import combinations
 from langdetect import detect, LangDetectException
 import umap
 from sentence_transformers import SentenceTransformer
-import matplotlib
-matplotlib.use('Agg')  # Use non-interactive backend
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import plotly.express as px
+from plotly.utils import PlotlyJSONEncoder
+import json
 import io
 import base64
 
@@ -967,12 +968,31 @@ def admin_compute_embeddings():
     
     print("Embedding model is available, proceeding with computation...")
     
+    data = request.json
+    trajectory_type = data.get('type', 'project')  # 'project' or 'visitor'
+    target_id = data.get('target_id')  # specific project or visitor, or 'all'
+    
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
     
     try:
-        # Get all feedback data
-        c.execute('SELECT project, content, timestamp, visitor_id FROM feedback ORDER BY timestamp')
+        # Get data based on trajectory type and target
+        if trajectory_type == 'project':
+            if target_id and target_id != 'all':
+                c.execute('SELECT project, content, timestamp, visitor_id FROM feedback WHERE project = ? ORDER BY timestamp', (target_id,))
+                title = f"Project: {PROJECTS.get(target_id, {}).get('title', target_id)}"
+            else:
+                c.execute('SELECT project, content, timestamp, visitor_id FROM feedback ORDER BY timestamp')
+                title = "All Projects"
+        else:  # visitor
+            if target_id and target_id != 'all':
+                c.execute('SELECT project, content, timestamp, visitor_id FROM feedback WHERE visitor_id = ? ORDER BY timestamp', (target_id,))
+                title = f"Visitor: {target_id}"
+            else:
+                # Get all visitors with multiple entries
+                c.execute('SELECT project, content, timestamp, visitor_id FROM feedback WHERE visitor_id != "anonymous" ORDER BY timestamp')
+                title = "All Visitors"
+        
         all_data = c.fetchall()
         
         if len(all_data) < 3:
@@ -1005,7 +1025,7 @@ def admin_compute_embeddings():
         # Apply UMAP with safer parameters
         print("Applying UMAP dimensionality reduction...")
         try:
-            n_neighbors = min(5, len(embeddings) - 1)  # Use smaller n_neighbors for small datasets
+            n_neighbors = min(5, len(embeddings) - 1)
             umap_reducer = umap.UMAP(
                 n_components=2, 
                 random_state=42, 
@@ -1019,50 +1039,110 @@ def admin_compute_embeddings():
             conn.close()
             return jsonify({'error': f'UMAP failed: {str(e)}'}), 500
         
-        # Create visualization
+        # Create minimalistic Plotly visualization
         print("Creating visualization...")
         try:
-            plt.figure(figsize=(12, 10))
-            plt.style.use('dark_background')
+            fig = go.Figure()
             
-            # Get unique projects for coloring
-            unique_projects = list(set(meta['project'] for meta in text_metadata))
-            colors = plt.cm.Set3(np.linspace(0, 1, len(unique_projects)))
-            project_colors = dict(zip(unique_projects, colors))
-            
-            # Plot all points
-            for i, (x, y) in enumerate(umap_embeddings):
-                project = text_metadata[i]['project']
-                plt.scatter(x, y, c=[project_colors[project]], s=50, alpha=0.8, 
-                           edgecolors='white', linewidth=0.5)
-            
-            # Draw trajectory lines for each project
-            for project in unique_projects:
-                project_indices = [i for i, meta in enumerate(text_metadata) if meta['project'] == project]
-                if len(project_indices) > 1:
+            if trajectory_type == 'project':
+                # Group by project
+                unique_projects = list(set(meta['project'] for meta in text_metadata))
+                colors = px.colors.qualitative.Set3[:len(unique_projects)]
+                
+                for i, project in enumerate(unique_projects):
+                    project_indices = [j for j, meta in enumerate(text_metadata) if meta['project'] == project]
                     project_coords = umap_embeddings[project_indices]
-                    plt.plot(project_coords[:, 0], project_coords[:, 1], 
-                            color=project_colors[project], alpha=0.4, linewidth=1.5, linestyle='--')
+                    
+                    # Add scatter points
+                    fig.add_trace(go.Scatter(
+                        x=project_coords[:, 0],
+                        y=project_coords[:, 1],
+                        mode='markers+lines',
+                        name=project,
+                        marker=dict(
+                            size=8,
+                            color=colors[i % len(colors)],
+                            opacity=0.8,
+                            line=dict(width=1, color='white')
+                        ),
+                        line=dict(
+                            width=2,
+                            color=colors[i % len(colors)],
+                            dash='dot'
+                        ),
+                        hovertemplate='<b>%{fullData.name}</b><br>Point %{pointNumber}<extra></extra>'
+                    ))
+            else:
+                # Group by visitor
+                visitor_counts = defaultdict(int)
+                for meta in text_metadata:
+                    visitor_counts[meta['visitor_id']] += 1
+                
+                # Only show visitors with multiple entries
+                multi_entry_visitors = [v for v, count in visitor_counts.items() if count > 1]
+                colors = px.colors.qualitative.Pastel[:len(multi_entry_visitors)]
+                
+                for i, visitor in enumerate(multi_entry_visitors):
+                    visitor_indices = [j for j, meta in enumerate(text_metadata) if meta['visitor_id'] == visitor]
+                    visitor_coords = umap_embeddings[visitor_indices]
+                    
+                    # Add scatter points with trajectory
+                    fig.add_trace(go.Scatter(
+                        x=visitor_coords[:, 0],
+                        y=visitor_coords[:, 1],
+                        mode='markers+lines',
+                        name=visitor,
+                        marker=dict(
+                            size=6,
+                            color=colors[i % len(colors)],
+                            opacity=0.9,
+                            line=dict(width=1, color='rgba(255,255,255,0.3)')
+                        ),
+                        line=dict(
+                            width=1.5,
+                            color=colors[i % len(colors)],
+                            smoothing=1.3
+                        ),
+                        hovertemplate='<b>%{fullData.name}</b><br>Entry %{pointNumber}<extra></extra>'
+                    ))
             
-            plt.title('UMAP Visualization: All Feedback Trajectories', fontsize=14, color='white', pad=20)
-            plt.xlabel('UMAP Dimension 1', fontsize=12, color='white')
-            plt.ylabel('UMAP Dimension 2', fontsize=12, color='white')
+            # Minimalistic styling
+            fig.update_layout(
+                title=dict(
+                    text=f'UMAP Trajectories: {title}',
+                    font=dict(size=16, color='white', family='Inter, system-ui, sans-serif'),
+                    x=0.5
+                ),
+                xaxis=dict(
+                    title='Semantic Dimension 1',
+                    showgrid=False,
+                    zeroline=False,
+                    showticklabels=False,
+                    color='rgba(255,255,255,0.6)'
+                ),
+                yaxis=dict(
+                    title='Semantic Dimension 2',
+                    showgrid=False,
+                    zeroline=False,
+                    showticklabels=False,
+                    color='rgba(255,255,255,0.6)'
+                ),
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                font=dict(family='Inter, system-ui, sans-serif', color='white'),
+                legend=dict(
+                    bgcolor='rgba(0,0,0,0.3)',
+                    bordercolor='rgba(255,255,255,0.2)',
+                    borderwidth=1,
+                    font=dict(size=10)
+                ),
+                margin=dict(l=40, r=40, t=60, b=40),
+                width=800,
+                height=600
+            )
             
-            # Add legend
-            legend_elements = [plt.Line2D([0], [0], marker='o', color='w', 
-                                        markerfacecolor=project_colors[proj], markersize=8, 
-                                        label=proj, linestyle='None') for proj in unique_projects]
-            plt.legend(handles=legend_elements, loc='upper right', 
-                      facecolor='black', edgecolor='white', fontsize=9)
-            
-            plt.tight_layout()
-            
-            # Convert plot to base64 string
-            img_buffer = io.BytesIO()
-            plt.savefig(img_buffer, format='png', facecolor='black', dpi=100, bbox_inches='tight')
-            img_buffer.seek(0)
-            img_base64 = base64.b64encode(img_buffer.getvalue()).decode()
-            plt.close()
+            # Convert to JSON for frontend
+            plot_json = json.dumps(fig, cls=PlotlyJSONEncoder)
             
             print("Visualization created successfully")
             
@@ -1086,8 +1166,10 @@ def admin_compute_embeddings():
         
         result = {
             'success': True,
-            'title': 'All Feedback Trajectories',
-            'plot_image': img_base64,
+            'trajectory_type': trajectory_type,
+            'target_id': target_id,
+            'title': title,
+            'plot_json': plot_json,
             'data_points': len(trajectory_data),
             'trajectory_data': trajectory_data
         }
