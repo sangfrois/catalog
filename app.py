@@ -678,13 +678,40 @@ def get_trace(visitor_id):
     c.execute('SELECT project, timestamp FROM visits WHERE visitor_id = ? ORDER BY timestamp', (visitor_id,))
     visits = [{'project': row[0], 'timestamp': row[1]} for row in c.fetchall()]
     
-    # Get feedback
-    c.execute('SELECT project, content, timestamp FROM feedback WHERE visitor_id = ? ORDER BY timestamp', (visitor_id,))
-    feedback = [{'project': row[0], 'content': row[1], 'timestamp': row[2]} for row in c.fetchall()]
+    # Get feedback with IDs for deletion
+    c.execute('SELECT id, project, content, timestamp FROM feedback WHERE visitor_id = ? ORDER BY timestamp', (visitor_id,))
+    feedback = [{'id': row[0], 'project': row[1], 'content': row[2], 'timestamp': row[3]} for row in c.fetchall()]
     
     conn.close()
     
     return jsonify({'visits': visits, 'feedback': feedback})
+
+@app.route('/api/feedback/<visitor_id>/<int:feedback_id>', methods=['DELETE'])
+def delete_feedback(visitor_id, feedback_id):
+    """Delete a specific feedback entry for a visitor."""
+    ip = request.remote_addr
+    
+    # Validate visitor_id
+    is_valid, err_msg = validate_visitor_id(visitor_id)
+    if not is_valid:
+        ip_violations[ip] += 1
+        return jsonify({'error': err_msg}), 400
+    
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    
+    # Verify the feedback belongs to this visitor before deleting
+    c.execute('SELECT id FROM feedback WHERE id = ? AND visitor_id = ?', (feedback_id, visitor_id))
+    if not c.fetchone():
+        conn.close()
+        return jsonify({'error': 'Feedback not found or access denied'}), 404
+    
+    # Delete the feedback
+    c.execute('DELETE FROM feedback WHERE id = ? AND visitor_id = ?', (feedback_id, visitor_id))
+    conn.commit()
+    conn.close()
+    
+    return jsonify({'status': 'deleted'})
 
 @app.route('/api/personal_corpse/<visitor_id>')
 def get_personal_corpse(visitor_id):
