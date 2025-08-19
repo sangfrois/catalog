@@ -72,7 +72,7 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            z-index: 99998;
+            z-index: 1000; /* A more reasonable default z-index */
             display: flex;
             gap: 10px;
             background: rgba(0, 0, 0, 0.5);
@@ -224,7 +224,7 @@
                 transition: transform 0.3s ease-in-out;
                 padding: 0;
                 border: none;
-                z-index: 2001; /* This is the fix */
+                z-index: 2001; /* This is the fix. Must be > 2000 */
             }
             .nav.nav-open {
                 transform: translateX(0);
