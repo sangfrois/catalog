@@ -31,11 +31,19 @@ except OSError:
     exit()
 
 # Load sentence transformer for embeddings
-try:
-    embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-except Exception as e:
-    print(f'Error loading sentence transformer: {e}')
-    embedding_model = None
+embedding_model = None
+def load_embedding_model():
+    global embedding_model
+    if embedding_model is None:
+        try:
+            print("Loading sentence transformer model...")
+            embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+            print("Sentence transformer model loaded successfully")
+        except Exception as e:
+            print(f'Error loading sentence transformer: {e}')
+            print("Try running: pip install sentence-transformers torch")
+            embedding_model = None
+    return embedding_model
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'machinic-encounters-secret'
@@ -767,7 +775,7 @@ def admin_compute_embeddings():
     
     try:
         # Compute embeddings
-        embeddings = embedding_model.encode(texts)
+        embeddings = model.encode(texts)
         
         # Apply UMAP
         umap_reducer = umap.UMAP(n_components=2, random_state=42, n_neighbors=min(15, len(texts)-1))
