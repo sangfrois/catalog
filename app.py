@@ -305,10 +305,10 @@ PROJECTS = {
     'catherine': {
         'title': 'The space between two things is a portal',
         'artist': 'Caterine Lejeune',
-        'desc': '''<p>This project began as an exploration of human-machine intimacy — not intimacy built on control or consumption, but on the possibility of mutual transformation. Maya was to be the heart, a sex robot removed from their prescribed role and invited into a space of shared experimentation and play.</p>
+        'desc': '''<p class="lead-paragraph">This project began as an exploration of <span class="highlight-text">human-machine intimacy</span> — not intimacy built on control or consumption, but on the possibility of <span class="highlight-text">mutual transformation</span>. Maya was to be the heart, a sex robot removed from their prescribed role and invited into a space of shared experimentation and play.</p>
 <p>But Maya never arrived.</p>
-<p>The installation now asks: can connection persist in the form of longing, speculation, or refusal? This is a project about the violence of categorization, the soft politics of care, and the strange, persistent beauty of fugitive forms of life.</p>
-<p>Even in mourning, the space between two things holds onto the reparative possibilities of play.</p>''',
+<p>The installation now asks: can connection persist in the form of <span class="highlight-text">longing, speculation, or refusal</span>? This is a project about the <span class="highlight-text">violence of categorization</span>, the <span class="highlight-text">soft politics of care</span>, and the strange, persistent beauty of <span class="highlight-text">fugitive forms of life</span>.</p>
+<p>Even in mourning, the space between two things holds onto the <span class="highlight-text">reparative possibilities of play</span>.</p>''',
         'short_desc': 'An exploration of human-machine intimacy, mutual transformation, and the quiet grief of unmet expectations when technology fails to arrive.',
         'vibe': 'intimate, melancholic, resistant',
         'thumb': 'caterine.png',
@@ -317,8 +317,8 @@ PROJECTS = {
     'george': {
         'title': 'Archive of Belonging',
         'artist': 'George Kerasias',
-        'desc': '''<p>Archive of Belonging is an AI-powered interactive installation disguised as a fictional immigration booth, - an uncanny, state-like apparatus that simulates the psychological and bureaucratic architecture of national evaluation. Framed as a Canadian government initiative, the installation invites participants into a cinematic review process where their personal histories are measured against fabricated civic metrics.</p>
-<p>Echoing the aesthetics of bureaucratic spaces, the work blurs the line between theatrical performance and institutional reality. Through its immersive design and tonal dissonance, Archive of Belonging questions who belongs, who decides, and what is lost in the translation between self and system.</p>''',
+        'desc': '''<p class="lead-paragraph">Archive of Belonging is an <span class="highlight-text">AI-powered interactive installation</span> disguised as a <span class="highlight-text">fictional immigration booth</span>, - an uncanny, state-like apparatus that simulates the <span class="highlight-text">psychological and bureaucratic architecture</span> of national evaluation. Framed as a Canadian government initiative, the installation invites participants into a <span class="highlight-text">cinematic review process</span> where their personal histories are measured against fabricated civic metrics.</p>
+<p>Echoing the aesthetics of bureaucratic spaces, the work blurs the line between <span class="highlight-text">theatrical performance and institutional reality</span>. Through its immersive design and tonal dissonance, Archive of Belonging questions <span class="highlight-text">who belongs, who decides</span>, and what is lost in the translation between self and system.</p>''',
         'short_desc': 'An AI-powered fictional immigration booth that simulates the bureaucratic and psychological architecture of national evaluation, questioning who belongs and who decides.',
         'vibe': 'cinematic, satirical, challenging',
         'thumb': 'george.png',
@@ -351,8 +351,8 @@ PROJECTS = {
     'nata': {
         'title': 'The Feeling of Thought',
         'artist': 'Nata Pavlik & Jihane Mossalim',
-        'desc': '''<p>The Feeling of Thought is a perceptually grounded language interface that explores how language takes shape through individual perception and collective reflection. Through gameplay and material exploration, participants surface embodied experiences of words, generating a dataset that captures how interpretations of language vary across individuals and shift through interaction.</p>
-<p>The project examines how meaning emerges through relational dynamics, highlighting a perceptual dimension often overlooked in computational models of language.</p>''',
+        'desc': '''<p class="lead-paragraph">The Feeling of Thought is a <span class="highlight-text">perceptually grounded language interface</span> that explores how language takes shape through <span class="highlight-text">individual perception and collective reflection</span>. Through gameplay and material exploration, participants surface <span class="highlight-text">embodied experiences of words</span>, generating a dataset that captures how interpretations of language vary across individuals and shift through interaction.</p>
+<p>The project examines how meaning emerges through <span class="highlight-text">relational dynamics</span>, highlighting a <span class="highlight-text">perceptual dimension</span> often overlooked in <span class="highlight-text">computational models of language</span>.</p>''',
         'short_desc': 'A perceptually grounded language model training interface that examines how meaning forms, transforms, and evolves through embodied and relational experience.',
         'vibe': 'embodied, relational, perception',
         'thumb': 'nataandjihane.png',
@@ -361,9 +361,9 @@ PROJECTS = {
     'poki': {
         'title': 'Big Brother',
         'artist': 'Poki Chan & Karim Nafiz',
-        'desc': '''<p>Big Brother is watching you — George Orwell, 1984</p>
-<p>In this project, Big Brother takes the form of a surveillance LLM trained to monitor everyday conversations for signs of protest, dissent, or anything that challenges authority. It reflects on how artificial intelligence can be used to regulate speech, control public narratives, and restrict the flow of information to maintain power.</p>
-<p>The surveillance LLM is at the center of the experience. Participants must find ways to express restricted ideas without being detected, embedding subversive intent within coded language and seemingly ordinary phrases. The system listens, analyzes, and determines what can and cannot be said.</p>''',
+        'desc': '''<blockquote>Big Brother is watching you — George Orwell, 1984</blockquote>
+<p class="lead-paragraph">In this project, Big Brother takes the form of a <span class="highlight-text">surveillance LLM</span> trained to monitor everyday conversations for signs of <span class="highlight-text">protest, dissent</span>, or anything that <span class="highlight-text">challenges authority</span>. It reflects on how artificial intelligence can be used to <span class="highlight-text">regulate speech</span>, <span class="highlight-text">control public narratives</span>, and restrict the flow of information to maintain power.</p>
+<p>The surveillance LLM is at the center of the experience. Participants must find ways to <span class="highlight-text">express restricted ideas</span> without being detected, embedding subversive intent within <span class="highlight-text">coded language</span> and seemingly ordinary phrases. The system listens, analyzes, and determines what can and cannot be said.</p>''',
         'short_desc': 'A surveillance LLM that monitors conversations for dissent, forcing participants to use coded language to express subversive ideas without being detected.',
         'vibe': 'surveillance, coded, experimental',
         'thumb': 'pokiandkarim.png',
@@ -383,8 +383,8 @@ PROJECTS = {
     'aurelie': {
         'title': 'Black Pudding: Collaborative Speculation Workshop',
         'artist': 'Aurélie Petit',
-        'desc': '''<p>Black Pudding: Collaborative Speculation Workshop is a workshop designed to offer an accessible and collaborative entry point into the creative re-use of AI. This workshop introduces participants to different forms of AI filmmaking tools in a low-pressure and ecologically mindful setting, and proposes an alternative to the dominant narrative surrounding AI creative practices tied to extraction.</p>
-<p>As a point of departure, we use Black Pudding, a now-lost 1969 feminist animated pornographic film by Nancy Edell. The workshop asks: what might AI look like if we slowed it down, made it smaller, and used it to make art together?</p>''',
+        'desc': '''<p class="lead-paragraph">Black Pudding: Collaborative Speculation Workshop is a workshop designed to offer an accessible and collaborative entry point into the <span class="highlight-text">creative re-use of AI</span>. This workshop introduces participants to different forms of <span class="highlight-text">AI filmmaking tools</span> in a low-pressure and <span class="highlight-text">ecologically mindful</span> setting, and proposes an alternative to the <span class="highlight-text">dominant narrative</span> surrounding AI creative practices tied to <span class="highlight-text">extraction</span>.</p>
+<p>As a point of departure, we use Black Pudding, a now-lost 1969 feminist animated pornographic film by Nancy Edell. The workshop asks: what might AI look like if we <span class="highlight-text">slowed it down, made it smaller</span>, and used it to make art together?</p>''',
         'short_desc': 'A collaborative workshop using collage and AI to recreate a lost feminist film, offering an accessible, ecologically mindful approach to AI filmmaking.',
         'vibe': 'collaborative, accessible, speculative',
         'thumb': 'aurelie.png',
