@@ -1106,39 +1106,44 @@ def admin_compute_embeddings():
                         hovertemplate='<b>%{fullData.name}</b><br>Entry %{pointNumber}<extra></extra>'
                     ))
             
-            # Minimalistic styling
+            # Minimalistic styling with better visibility
             fig.update_layout(
                 title=dict(
                     text=f'UMAP Trajectories: {title}',
-                    font=dict(size=16, color='white', family='Inter, system-ui, sans-serif'),
+                    font=dict(size=16, color='#333333', family='Inter, system-ui, sans-serif'),
                     x=0.5
                 ),
                 xaxis=dict(
                     title='Semantic Dimension 1',
-                    showgrid=False,
+                    showgrid=True,
+                    gridcolor='rgba(200,200,200,0.3)',
                     zeroline=False,
-                    showticklabels=False,
-                    color='rgba(255,255,255,0.6)'
+                    showticklabels=True,
+                    tickfont=dict(size=10, color='#666666'),
+                    titlefont=dict(size=12, color='#666666')
                 ),
                 yaxis=dict(
                     title='Semantic Dimension 2',
-                    showgrid=False,
+                    showgrid=True,
+                    gridcolor='rgba(200,200,200,0.3)',
                     zeroline=False,
-                    showticklabels=False,
-                    color='rgba(255,255,255,0.6)'
+                    showticklabels=True,
+                    tickfont=dict(size=10, color='#666666'),
+                    titlefont=dict(size=12, color='#666666')
                 ),
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                font=dict(family='Inter, system-ui, sans-serif', color='white'),
+                plot_bgcolor='rgba(255,255,255,0.95)',
+                paper_bgcolor='rgba(255,255,255,1)',
+                font=dict(family='Inter, system-ui, sans-serif', color='#333333'),
                 legend=dict(
-                    bgcolor='rgba(0,0,0,0.3)',
-                    bordercolor='rgba(255,255,255,0.2)',
+                    bgcolor='rgba(255,255,255,0.9)',
+                    bordercolor='rgba(200,200,200,0.5)',
                     borderwidth=1,
-                    font=dict(size=10)
+                    font=dict(size=10, color='#333333')
                 ),
-                margin=dict(l=40, r=40, t=60, b=40),
+                margin=dict(l=60, r=40, t=80, b=60),
                 width=800,
-                height=600
+                height=600,
+                showlegend=True
             )
             
             # Convert to JSON for frontend

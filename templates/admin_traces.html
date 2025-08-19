@@ -558,24 +558,33 @@
                     // Render Plotly chart
                     try {
                         const plotData = JSON.parse(data.plot_json);
-                        console.log('Plot data received:', plotData);
+                        console.log('Plot data received, traces:', plotData.data.length);
                         
                         // Clear any existing plot
-                        Plotly.purge('trajectoryPlot');
+                        const plotDiv = document.getElementById('trajectoryPlot');
+                        Plotly.purge(plotDiv);
                         
-                        // Create new plot
-                        Plotly.newPlot('trajectoryPlot', plotData.data, plotData.layout, {
+                        // Ensure the plot div is visible and has dimensions
+                        plotDiv.style.display = 'block';
+                        plotDiv.style.width = '100%';
+                        plotDiv.style.height = '600px';
+                        
+                        // Create new plot with explicit config
+                        Plotly.newPlot(plotDiv, plotData.data, plotData.layout, {
                             responsive: true,
-                            displayModeBar: false
+                            displayModeBar: false,
+                            staticPlot: false
                         }).then(() => {
                             console.log('Plotly chart rendered successfully');
+                            // Force a resize to ensure proper display
+                            Plotly.Plots.resize(plotDiv);
                         }).catch(error => {
                             console.error('Plotly rendering error:', error);
-                            document.getElementById('trajectoryPlot').innerHTML = '<p style="color: red;">Error rendering chart: ' + error.message + '</p>';
+                            plotDiv.innerHTML = '<div style="color: red; padding: 20px; text-align: center;">Error rendering chart: ' + error.message + '</div>';
                         });
                     } catch (error) {
                         console.error('Error parsing plot data:', error);
-                        document.getElementById('trajectoryPlot').innerHTML = '<p style="color: red;">Error parsing chart data: ' + error.message + '</p>';
+                        document.getElementById('trajectoryPlot').innerHTML = '<div style="color: red; padding: 20px; text-align: center;">Error parsing chart data: ' + error.message + '</div>';
                     }
                     
                     document.getElementById('dataPointCount').textContent = data.data_points;
