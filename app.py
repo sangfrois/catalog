@@ -1019,22 +1019,79 @@ def admin_compute_embeddings():
             conn.close()
             return jsonify({'error': f'Failed to compute embeddings: {str(e)}'}), 500
         
-        # Apply UMAP with safer parameters and consistent seed
-        print("Applying UMAP dimensionality reduction...")
+        # Apply optimized dimensionality reduction for maximum territory separation
+        print("Applying optimized dimensionality reduction...")
         try:
-            n_neighbors = min(5, len(embeddings) - 1)
-            umap_reducer = umap.UMAP(
-                n_components=2, 
-                random_state=12345,  # Fixed seed for consistent territories
-                n_neighbors=n_neighbors,
-                min_dist=0.1,
-                metric='cosine'
-            )
+            from sklearn.manifold import MDS
+            from sklearn.metrics.pairwise import cosine_distances
+            
+            # First optimize project positions using MDS for maximum separation
+            if trajectory_type == 'project' or target_id == 'all':
+                # Get project embeddings for optimization
+                project_texts_admin = []
+                project_indices = []
+                
+                for i, (text, meta) in enumerate(zip(all_texts, text_metadata)):
+                    if meta['project'] not in [p['project'] for p in project_texts_admin]:
+                        project_texts_admin.append({'project': meta['project'], 'text': text})
+                        project_indices.append(i)
+                
+                if len(project_texts_admin) > 2:
+                    project_embeddings_admin = embeddings[project_indices]
+                    project_distances = cosine_distances(project_embeddings_admin)
+                    
+                    # Use MDS for optimal project separation
+                    mds = MDS(n_components=2, dissimilarity='precomputed', random_state=12345)
+                    project_coords_mds = mds.fit_transform(project_distances)
+                    
+                    # Initialize UMAP with optimized project positions
+                    init_positions = np.random.RandomState(12345).uniform(-5, 5, (len(embeddings), 2))
+                    
+                    # Place projects at optimized positions
+                    proj_x_min, proj_x_max = project_coords_mds[:, 0].min(), project_coords_mds[:, 0].max()
+                    proj_y_min, proj_y_max = project_coords_mds[:, 1].min(), project_coords_mds[:, 1].max()
+                    
+                    if proj_x_max != proj_x_min and proj_y_max != proj_y_min:
+                        for i, proj_idx in enumerate(project_indices):
+                            init_positions[proj_idx, 0] = 8 * (project_coords_mds[i, 0] - proj_x_min) / (proj_x_max - proj_x_min) - 4
+                            init_positions[proj_idx, 1] = 8 * (project_coords_mds[i, 1] - proj_y_min) / (proj_y_max - proj_y_min) - 4
+                    
+                    n_neighbors = min(5, len(embeddings) - 1)
+                    umap_reducer = umap.UMAP(
+                        n_components=2, 
+                        random_state=12345,
+                        n_neighbors=n_neighbors,
+                        min_dist=0.3,  # Larger min_dist to maintain separation
+                        metric='cosine',
+                        init=init_positions,
+                        n_epochs=500
+                    )
+                else:
+                    # Fallback to standard UMAP if not enough projects
+                    n_neighbors = min(5, len(embeddings) - 1)
+                    umap_reducer = umap.UMAP(
+                        n_components=2, 
+                        random_state=12345,
+                        n_neighbors=n_neighbors,
+                        min_dist=0.1,
+                        metric='cosine'
+                    )
+            else:
+                # Standard UMAP for visitor-focused analysis
+                n_neighbors = min(5, len(embeddings) - 1)
+                umap_reducer = umap.UMAP(
+                    n_components=2, 
+                    random_state=12345,
+                    n_neighbors=n_neighbors,
+                    min_dist=0.1,
+                    metric='cosine'
+                )
+            
             umap_embeddings = umap_reducer.fit_transform(embeddings)
-            print(f"UMAP completed successfully, shape: {umap_embeddings.shape}")
+            print(f"Optimized dimensionality reduction completed successfully, shape: {umap_embeddings.shape}")
         except Exception as e:
             conn.close()
-            return jsonify({'error': f'UMAP failed: {str(e)}'}), 500
+            return jsonify({'error': f'Dimensionality reduction failed: {str(e)}'}), 500
         
         # Create custom visualization data
         print("Creating visualization...")
@@ -1193,14 +1250,47 @@ def get_semantic_territories():
         # Compute embeddings
         embeddings = embedding_model.encode(all_texts, show_progress_bar=False)
         
-        # Apply UMAP with consistent seed for stable territories
+        # First, optimize project territory positions for maximum separation
+        from sklearn.manifold import MDS
+        from sklearn.metrics.pairwise import cosine_distances
+        
+        # Compute pairwise distances between project embeddings
+        project_embeddings = embeddings[:len(project_texts)]
+        project_distances = cosine_distances(project_embeddings)
+        
+        # Use MDS to position projects for maximum separation
+        mds = MDS(n_components=2, dissimilarity='precomputed', random_state=12345)
+        project_coords_mds = mds.fit_transform(project_distances)
+        
+        # Now apply UMAP to all embeddings, but initialize with optimized project positions
         n_neighbors = min(8, len(embeddings) - 1)
+        
+        # Create initialization array with optimized project positions
+        init_positions = np.zeros((len(embeddings), 2))
+        
+        # Scale and position the MDS project coordinates
+        proj_x_min, proj_x_max = project_coords_mds[:, 0].min(), project_coords_mds[:, 0].max()
+        proj_y_min, proj_y_max = project_coords_mds[:, 1].min(), project_coords_mds[:, 1].max()
+        
+        # Normalize MDS coordinates to reasonable range for UMAP initialization
+        if proj_x_max != proj_x_min:
+            init_positions[:len(project_texts), 0] = 10 * (project_coords_mds[:, 0] - proj_x_min) / (proj_x_max - proj_x_min) - 5
+        if proj_y_max != proj_y_min:
+            init_positions[:len(project_texts), 1] = 10 * (project_coords_mds[:, 1] - proj_y_min) / (proj_y_max - proj_y_min) - 5
+        
+        # Initialize feedback positions randomly around the space
+        np.random.seed(12345)
+        init_positions[len(project_texts):, 0] = np.random.uniform(-3, 3, len(feedback_texts))
+        init_positions[len(project_texts):, 1] = np.random.uniform(-3, 3, len(feedback_texts))
+        
         umap_reducer = umap.UMAP(
             n_components=2,
-            random_state=12345,  # Fixed seed for consistent project territories
+            random_state=12345,
             n_neighbors=n_neighbors,
-            min_dist=0.1,
-            metric='cosine'
+            min_dist=0.3,  # Increase min_dist to maintain territory separation
+            metric='cosine',
+            init=init_positions,  # Use our optimized initialization
+            n_epochs=500  # More epochs for better convergence with custom init
         )
         
         umap_embeddings = umap_reducer.fit_transform(embeddings)
@@ -1228,18 +1318,34 @@ def get_semantic_territories():
         def normalize_coord(x, y):
             return [(x - x_min) / (x_max - x_min), (y - y_min) / (y_max - y_min)]
         
-        # Create territories
+        # Create territories with adaptive radii based on semantic density
         territories = []
         colors = ['#8dd3c7', '#ffffb3', '#bebada', '#fb8072', '#80b1d3', '#fdb462', '#b3de69', '#fccde5']
         
+        # Calculate adaptive territory sizes based on local density
+        project_coords_norm = [normalize_coord(coord[0], coord[1]) for coord in project_coords]
+        
         for i, (coord, info) in enumerate(zip(project_coords, project_info)):
             norm_coord = normalize_coord(coord[0], coord[1])
+            
+            # Calculate distance to nearest other territory
+            min_distance = float('inf')
+            for j, other_coord in enumerate(project_coords_norm):
+                if i != j:
+                    dist = np.sqrt((norm_coord[0] - other_coord[0])**2 + (norm_coord[1] - other_coord[1])**2)
+                    min_distance = min(min_distance, dist)
+            
+            # Adaptive radius: smaller when territories are close, larger when isolated
+            base_radius = 0.08
+            adaptive_radius = min(0.15, max(0.06, min_distance * 0.4))
+            
             territories.append({
                 'id': info['id'],
                 'title': info['title'],
                 'center': norm_coord,
                 'color': colors[i % len(colors)],
-                'radius': 0.12  # Territory radius
+                'radius': adaptive_radius,
+                'semantic_distance': min_distance  # For debugging/analysis
             })
         
         # Create visitor trajectories
