@@ -531,16 +531,22 @@ def get_word_network():
     all_concepts = []
     project_concepts = {}
     concept_projects = {}
+    concept_frequency_by_project = {}
     
     for entry in feedback_data:
         concepts = process_text_bilingual(entry['content'])
         all_concepts.extend(concepts)
         
-        # Track which projects each concept appears in
+        # Track which projects each concept appears in with frequency
         for concept in concepts:
             if concept not in concept_projects:
                 concept_projects[concept] = set()
+                concept_frequency_by_project[concept] = {}
             concept_projects[concept].add(entry['project'])
+            
+            if entry['project'] not in concept_frequency_by_project[concept]:
+                concept_frequency_by_project[concept][entry['project']] = 0
+            concept_frequency_by_project[concept][entry['project']] += 1
         
         # Track concepts per project
         if entry['project'] not in project_concepts:
@@ -551,13 +557,25 @@ def get_word_network():
     if not concept_freq:
         return jsonify({'nodes': [], 'links': [], 'metadata': {'total_feedback': len(feedback_data)}})
 
-    # Select top concepts
-    top_concepts = {concept for concept, freq in concept_freq.most_common(35)}
+    # Adaptive scaling based on data size - reduce nodes for large datasets
+    total_feedback = len(feedback_data)
+    if total_feedback > 200:
+        max_nodes = 25
+        min_freq = 3
+    elif total_feedback > 100:
+        max_nodes = 30
+        min_freq = 2
+    else:
+        max_nodes = 35
+        min_freq = 1
     
-    # Calculate enhanced relationships
+    # Select top concepts with minimum frequency threshold
+    top_concepts = {concept for concept, freq in concept_freq.most_common(max_nodes) if freq >= min_freq}
+    
+    # Calculate relationships with stricter filtering
     relationships = []
     
-    # 1. Traditional co-occurrence within same feedback
+    # Only include strong co-occurrence relationships
     co_occurrence = Counter()
     for entry in feedback_data:
         concepts = [c for c in process_text_bilingual(entry['content']) if c in top_concepts]
@@ -565,71 +583,68 @@ def get_word_network():
             pair = tuple(sorted((c1, c2)))
             co_occurrence[pair] += 1
     
-    # 2. Cross-project conceptual bridges (concepts that appear in multiple projects)
+    # Cross-project bridges (more selective)
     cross_project_strength = {}
     for concept in top_concepts:
         projects_with_concept = concept_projects.get(concept, set())
         if len(projects_with_concept) > 1:
-            # This concept bridges multiple projects
             for other_concept in top_concepts:
                 if other_concept != concept:
                     other_projects = concept_projects.get(other_concept, set())
                     shared_projects = projects_with_concept & other_projects
-                    if shared_projects:
+                    if len(shared_projects) >= 2:  # Require at least 2 shared projects
                         pair = tuple(sorted((concept, other_concept)))
                         cross_project_strength[pair] = len(shared_projects)
     
-    # 3. Semantic clustering based on project co-occurrence
-    project_semantic_links = Counter()
-    for project, concepts in project_concepts.items():
-        project_concepts_filtered = [c for c in concepts if c in top_concepts]
-        for c1, c2 in combinations(set(project_concepts_filtered), 2):
-            pair = tuple(sorted((c1, c2)))
-            project_semantic_links[pair] += 1
+    # Only include relationships above threshold
+    min_relationship_strength = 2 if total_feedback > 150 else 1
     
-    # Combine all relationship types
-    all_pairs = set(co_occurrence.keys()) | set(cross_project_strength.keys()) | set(project_semantic_links.keys())
+    all_pairs = set(co_occurrence.keys()) | set(cross_project_strength.keys())
     
     for pair in all_pairs:
         c1, c2 = pair
         
-        # Calculate composite strength
         cooccur_strength = co_occurrence.get(pair, 0)
-        bridge_strength = cross_project_strength.get(pair, 0) * 2  # Boost cross-project links
-        semantic_strength = project_semantic_links.get(pair, 0)
+        bridge_strength = cross_project_strength.get(pair, 0) * 1.5
         
-        total_strength = cooccur_strength + bridge_strength + semantic_strength
+        total_strength = cooccur_strength + bridge_strength
         
-        if total_strength > 0:
-            # Determine link type
-            if bridge_strength > cooccur_strength and bridge_strength > semantic_strength:
-                link_type = 'bridge'
-            elif semantic_strength > cooccur_strength:
-                link_type = 'semantic'
-            else:
-                link_type = 'cooccurrence'
+        if total_strength >= min_relationship_strength:
+            link_type = 'bridge' if bridge_strength > cooccur_strength else 'cooccurrence'
             
             relationships.append({
                 'source': c1,
                 'target': c2,
-                'strength': min(total_strength, 8),  # Cap for visualization
+                'strength': min(total_strength, 6),
                 'type': link_type,
                 'projects': list(concept_projects.get(c1, set()) & concept_projects.get(c2, set()))
             })
 
-    # Create enhanced nodes
+    # Create enhanced nodes with project color information
     nodes = []
     for concept in top_concepts:
         projects_list = list(concept_projects.get(concept, set()))
+        
+        # Determine primary project (where concept appears most)
+        primary_project = None
+        max_project_freq = 0
+        for project in projects_list:
+            project_freq = concept_frequency_by_project[concept].get(project, 0)
+            if project_freq > max_project_freq:
+                max_project_freq = project_freq
+                primary_project = project
+        
         node_type = 'bridge' if len(projects_list) > 2 else 'local'
         
         nodes.append({
             'id': concept,
             'frequency': concept_freq[concept],
-            'size': 10 + min(concept_freq[concept] * 3, 20),
+            'size': 12 + min(concept_freq[concept] * 2, 24),
             'type': node_type,
             'projects': projects_list,
-            'cross_project_score': len(projects_list)
+            'primary_project': primary_project,
+            'cross_project_score': len(projects_list),
+            'project_frequencies': concept_frequency_by_project[concept]
         })
 
     return jsonify({
@@ -639,7 +654,8 @@ def get_word_network():
             'total_feedback': len(feedback_data),
             'unique_concepts': len(top_concepts),
             'cross_project_bridges': len([n for n in nodes if n['type'] == 'bridge']),
-            'projects': list(project_concepts.keys())
+            'projects': list(project_concepts.keys()),
+            'scaling_applied': total_feedback > 100
         }
     })
 
