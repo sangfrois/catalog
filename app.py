@@ -1114,22 +1114,26 @@ def admin_compute_embeddings():
                     x=0.5
                 ),
                 xaxis=dict(
-                    title='Semantic Dimension 1',
+                    title=dict(
+                        text='Semantic Dimension 1',
+                        font=dict(size=12, color='#666666')
+                    ),
                     showgrid=True,
                     gridcolor='rgba(200,200,200,0.3)',
                     zeroline=False,
                     showticklabels=True,
-                    tickfont=dict(size=10, color='#666666'),
-                    titlefont=dict(size=12, color='#666666')
+                    tickfont=dict(size=10, color='#666666')
                 ),
                 yaxis=dict(
-                    title='Semantic Dimension 2',
+                    title=dict(
+                        text='Semantic Dimension 2',
+                        font=dict(size=12, color='#666666')
+                    ),
                     showgrid=True,
                     gridcolor='rgba(200,200,200,0.3)',
                     zeroline=False,
                     showticklabels=True,
-                    tickfont=dict(size=10, color='#666666'),
-                    titlefont=dict(size=12, color='#666666')
+                    tickfont=dict(size=10, color='#666666')
                 ),
                 plot_bgcolor='rgba(255,255,255,0.95)',
                 paper_bgcolor='rgba(255,255,255,1)',
