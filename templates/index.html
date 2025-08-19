@@ -276,6 +276,21 @@
         letter-spacing: 1px;
     }
 
+    .main-title {
+        position: absolute;
+        top: 15%;
+        left: 50%;
+        transform: translateX(-50%);
+        font-family: 'Times New Roman', serif;
+        font-size: 2.5rem;
+        color: var(--primary);
+        font-weight: normal;
+        z-index: 5;
+        margin: 0;
+        text-align: center;
+        letter-spacing: 2px;
+    }
+
     .plan-title {
         position: absolute;
         bottom: 5%;
@@ -329,15 +344,26 @@
     }
 
     @media (max-width: 768px) {
+        .main-title {
+            position: relative;
+            top: auto;
+            left: auto;
+            transform: none;
+            text-align: center;
+            margin-top: 8vh;
+            margin-bottom: 1rem;
+            font-size: 2rem;
+        }
+        
         .plan-title {
             position: relative;
             top: auto;
             left: auto;
             transform: none;
             text-align: center;
-            margin-top: 12vh;
+            margin-top: 2rem;
             margin-bottom: 1rem;
-            font-size: 2rem;
+            font-size: 1.2rem;
         }
         .map-container {
             height: auto;
@@ -533,6 +559,7 @@
         </div>
     </div>
     
+    <h1 class="main-title">Machinic Encounters</h1>
     <div class="floorplan" id="floorplan">
         <div class="space-label">Studio Hydro-Québec</div>
         <div class="entrance-symbol" style="left: 85%; top: 5%;">ENTRANCE</div>
