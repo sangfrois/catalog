@@ -205,6 +205,72 @@ if not os.path.exists(db_path):
     conn.commit()
     conn.close()
 
+def cleanup_database_duplicates():
+    """Remove duplicate entries from the database on startup."""
+    print("Checking for duplicate entries in database...")
+    
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    
+    try:
+        # Find and remove duplicate feedback entries
+        c.execute('''
+            SELECT content, project, visitor_id, COUNT(*) as duplicate_count,
+                   MIN(id) as keep_id, GROUP_CONCAT(id) as all_ids
+            FROM feedback 
+            GROUP BY content, project, visitor_id 
+            HAVING COUNT(*) > 1
+        ''')
+        
+        duplicates = c.fetchall()
+        total_removed = 0
+        
+        if duplicates:
+            print(f"Found {len(duplicates)} groups of duplicate feedback entries")
+            
+            for content, project, visitor_id, dup_count, keep_id, all_ids in duplicates:
+                # Parse the comma-separated IDs
+                id_list = [int(id_str) for id_str in all_ids.split(',')]
+                # Remove the ID we want to keep
+                ids_to_remove = [id_val for id_val in id_list if id_val != keep_id]
+                
+                # Delete the duplicate entries
+                for id_to_remove in ids_to_remove:
+                    c.execute('DELETE FROM feedback WHERE id = ?', (id_to_remove,))
+                    total_removed += 1
+            
+            print(f"Removed {total_removed} duplicate feedback entries")
+        
+        # Clean up duplicate visits
+        c.execute('''
+            DELETE FROM visits 
+            WHERE id NOT IN (
+                SELECT MIN(id) 
+                FROM visits 
+                GROUP BY project, visitor_id, date(timestamp)
+            )
+        ''')
+        
+        visits_removed = c.rowcount
+        if visits_removed > 0:
+            print(f"Removed {visits_removed} duplicate visit entries")
+        
+        conn.commit()
+        
+        if total_removed > 0 or visits_removed > 0:
+            print("Database cleanup completed successfully")
+        else:
+            print("No duplicates found - database is clean")
+            
+    except Exception as e:
+        print(f"Database cleanup failed: {e}")
+        conn.rollback()
+    finally:
+        conn.close()
+
+# Run database cleanup on startup
+cleanup_database_duplicates()
+
 # Project data extracted from exhibition materials
 PROJECTS = {
     'catherine': {
