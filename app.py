@@ -47,25 +47,46 @@ def load_embedding_model():
         
         for model_name in models_to_try:
             try:
-                print(f"Loading sentence transformer model: {model_name}...")
-                embedding_model = SentenceTransformer(model_name)
-                print(f"Sentence transformer model '{model_name}' loaded successfully")
+                print(f"Attempting to load sentence transformer model: {model_name}...")
+                print(f"This may take a few minutes on first run to download the model...")
+                
+                # Force download and load
+                embedding_model = SentenceTransformer(model_name, cache_folder=None)
+                
+                # Test the model with a simple encoding
+                test_text = "This is a test sentence."
+                test_embedding = embedding_model.encode([test_text])
+                print(f"Model test successful. Embedding shape: {test_embedding.shape}")
+                
+                print(f"Sentence transformer model '{model_name}' loaded and tested successfully")
                 return embedding_model
+                
             except Exception as e:
-                print(f'Error loading {model_name}: {e}')
+                print(f'Error loading {model_name}: {str(e)}')
+                print(f'Full error details: {type(e).__name__}: {e}')
+                embedding_model = None
                 continue
         
         print("All sentence transformer models failed to load.")
-        print("Try running: pip install sentence-transformers torch")
-        print("Or check your internet connection for model download.")
+        print("This might be due to:")
+        print("1. Network connectivity issues")
+        print("2. Hugging Face Hub access problems") 
+        print("3. Model download failures")
+        print("Try running the app with internet connection for initial model download.")
         embedding_model = None
     return embedding_model
 
 # Initialize embedding model at startup
+print("Initializing embedding model at startup...")
 try:
-    load_embedding_model()
+    model = load_embedding_model()
+    if model is not None:
+        print("Embedding model initialization successful!")
+    else:
+        print("Embedding model initialization failed - will retry on first use")
 except Exception as e:
     print(f"Failed to initialize embedding model at startup: {e}")
+    print("Model will be loaded on first use instead")
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'machinic-encounters-secret'
