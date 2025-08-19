@@ -360,13 +360,13 @@
 {% block content %}
 <div class="dashboard-container">
     <div class="dashboard-header">
-        <h1 class="dashboard-title glitch">EMERGENT THOUGHTS
+        <h1 class="dashboard-title glitch">Encounter Meshwork
             <span class="live-indicator-inline">
                 <span class="live-dot"></span>
                 <span class="mono">LIVE</span>
             </span>
         </h1>
-        <p class="dashboard-subtitle mono">Live visualization of participant thoughts</p>
+        <p class="dashboard-subtitle mono">Live visualization of participant notes</p>
         <p class="dashboard-description">Words and connections emerge from visitor reflections across all projects</p>
     </div>
     
@@ -374,7 +374,7 @@
         <button class="mode-btn active" onclick="setMode('wordcloud')">Words</button>
         <button class="mode-btn" onclick="setMode('network')">Network</button>
         <button class="mode-btn" onclick="setMode('flow')">Flow</button>
-        <button class="mode-btn" onclick="setMode('corpse')">Corpse</button>
+        <button class="mode-btn" onclick="setMode('corpse')">Poiesis</button>
     </div>
     
     <div class="viz-container">
@@ -738,7 +738,7 @@
         container.innerHTML = `
             <div class="corpse-container">
                 <h2 class="corpse-title">EXQUISITE CORPSE</h2>
-                <p class="corpse-subtitle">Generating collective unconscious...</p>
+                <p class="corpse-subtitle">Generating combinations...</p>
             </div>
         `;
         
@@ -759,7 +759,7 @@
                         </div>
                         
                         <button class="corpse-refresh" onclick="renderExquisiteCorpse()">
-                            REGENERATE CORPSE
+                            REGENERATE POIESIS
                         </button>
                     </div>
                 `;
@@ -779,7 +779,7 @@
                 container.innerHTML = `
                     <div class="corpse-container">
                         <h2 class="corpse-title">EXQUISITE CORPSE</h2>
-                        <p class="corpse-subtitle">The collective unconscious is still forming...</p>
+                        <p class="corpse-subtitle">forming combinations...</p>
                         <div class="corpse-poem">
                             In the space between<br>
                             thoughts gather<br>
