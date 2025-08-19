@@ -555,6 +555,118 @@
         display: block;
         opacity: 1;
     }
+    
+    .exhibition-feedback {
+        background: rgba(0, 255, 136, 0.05);
+        border: 1px solid rgba(0, 255, 136, 0.2);
+        padding: 2rem;
+        margin: 2rem 0;
+        text-align: center;
+    }
+    
+    .exhibition-feedback h3 {
+        color: var(--accent);
+        margin-bottom: 1rem;
+        font-size: 1.2rem;
+    }
+    
+    .exhibition-feedback p {
+        color: var(--muted);
+        margin-bottom: 1.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .exhibition-feedback form {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .exhibition-feedback textarea {
+        width: 100%;
+        min-height: 120px;
+        padding: 1rem;
+        border: 1px solid rgba(0, 255, 136, 0.3);
+        background: rgba(0, 0, 0, 0.1);
+        color: var(--primary);
+        font-family: inherit;
+        font-size: 0.9rem;
+        resize: vertical;
+        margin-bottom: 1rem;
+    }
+    
+    .exhibition-feedback textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        background: rgba(0, 255, 136, 0.1);
+    }
+    
+    .exhibition-feedback button {
+        background: var(--secondary);
+        border: 2px solid var(--accent);
+        color: var(--accent);
+        padding: 12px 24px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: 'JetBrains Mono', monospace;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+    
+    .exhibition-feedback button:hover {
+        background: var(--accent);
+        color: var(--secondary);
+        transform: translate(-2px, -2px);
+        box-shadow: 2px 2px 0 var(--accent);
+    }
+    
+    .exhibition-feedback button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+    
+    #exhibitionFeedbackStatus {
+        margin-top: 1rem;
+        padding: 0.5rem;
+        font-size: 0.9rem;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    #exhibitionFeedbackStatus.success {
+        color: var(--accent);
+        background: rgba(0, 255, 136, 0.1);
+        border: 1px solid rgba(0, 255, 136, 0.3);
+    }
+    
+    #exhibitionFeedbackStatus.error {
+        color: #ff6b6b;
+        background: rgba(255, 107, 107, 0.1);
+        border: 1px solid rgba(255, 107, 107, 0.3);
+    }
+    
+    @media (max-width: 768px) {
+        .exhibition-feedback {
+            padding: 1.5rem 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .exhibition-feedback h3 {
+            font-size: 1.1rem;
+        }
+        
+        .exhibition-feedback textarea {
+            min-height: 100px;
+            padding: 0.8rem;
+            font-size: 0.85rem;
+        }
+        
+        .exhibition-feedback button {
+            padding: 10px 20px;
+            font-size: 0.8rem;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -795,6 +907,62 @@
             expandedContent.classList.add('show');
             expandBtn.textContent = 'Read Less';
         }
+    }
+    
+    // Exhibition feedback form
+    const exhibitionForm = document.getElementById('exhibitionFeedbackForm');
+    if (exhibitionForm) {
+        exhibitionForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const comment = document.getElementById('exhibitionComment').value.trim();
+            const statusDiv = document.getElementById('exhibitionFeedbackStatus');
+            const submitButton = exhibitionForm.querySelector('button[type="submit"]');
+            
+            if (!comment) {
+                statusDiv.textContent = 'Please enter your thoughts before submitting.';
+                statusDiv.className = 'error';
+                return;
+            }
+            
+            // Disable button and show loading
+            submitButton.disabled = true;
+            submitButton.textContent = 'Sharing...';
+            statusDiv.textContent = '';
+            statusDiv.className = '';
+            
+            // Submit feedback
+            fetch('/feedback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    project: 'exhibition_general',
+                    content: comment,
+                    visitor_id: getVisitorId()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    statusDiv.textContent = 'Thank you for sharing your reflection!';
+                    statusDiv.className = 'success';
+                    document.getElementById('exhibitionComment').value = '';
+                } else {
+                    throw new Error(data.error || 'Failed to submit feedback');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                statusDiv.textContent = 'Error submitting feedback. Please try again.';
+                statusDiv.className = 'error';
+            })
+            .finally(() => {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Share Reflection';
+            });
+        });
     }
 
 </script>

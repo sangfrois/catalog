@@ -273,10 +273,22 @@
         const navToggle = document.querySelector('.nav-toggle');
         const nav = document.querySelector('.nav');
 
-        navToggle.addEventListener('click', () => {
-            nav.classList.toggle('nav-open');
-            navToggle.classList.toggle('nav-open');
-        });
+        if (navToggle && nav) {
+            navToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                nav.classList.toggle('nav-open');
+                navToggle.classList.toggle('nav-open');
+            });
+            
+            // Close menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!navToggle.contains(e.target) && !nav.contains(e.target)) {
+                    nav.classList.remove('nav-open');
+                    navToggle.classList.remove('nav-open');
+                }
+            });
+        }
         
         // Utility functions
         function trackVisit(projectId) {
