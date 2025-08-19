@@ -1152,6 +1152,142 @@ def admin_compute_embeddings():
         print(f"Unexpected error in compute_embeddings: {str(e)}")
         return jsonify({'error': f'Computation failed: {str(e)}'}), 500
 
+@app.route('/api/semantic_territories')
+def get_semantic_territories():
+    """Generate semantic territory visualization using existing embedding infrastructure."""
+    global embedding_model
+    
+    if embedding_model is None:
+        embedding_model = load_embedding_model()
+    
+    if embedding_model is None:
+        return jsonify({'error': 'Embedding model not available'}), 500
+    
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    
+    try:
+        # Get all feedback data
+        c.execute('SELECT project, content, timestamp, visitor_id FROM feedback ORDER BY timestamp')
+        feedback_data = c.fetchall()
+        
+        if len(feedback_data) < 5:
+            return jsonify({'error': 'Not enough data for territory visualization'}), 400
+        
+        # Create project embeddings from descriptions
+        project_texts = []
+        project_info = []
+        
+        for project_id, project_data in PROJECTS.items():
+            combined_text = f"{project_data['title']} {project_data['short_desc']} {project_data['vibe']}"
+            project_texts.append(combined_text)
+            project_info.append({'id': project_id, 'title': project_data['title']})
+        
+        # Prepare feedback data
+        feedback_texts = [row[1] for row in feedback_data]
+        feedback_metadata = [{'project': row[0], 'timestamp': row[2], 'visitor_id': row[3]} for row in feedback_data]
+        
+        # Combine all texts for unified embedding space
+        all_texts = project_texts + feedback_texts
+        
+        # Compute embeddings
+        embeddings = embedding_model.encode(all_texts, show_progress_bar=False)
+        
+        # Apply UMAP
+        n_neighbors = min(8, len(embeddings) - 1)
+        umap_reducer = umap.UMAP(
+            n_components=2,
+            random_state=42,
+            n_neighbors=n_neighbors,
+            min_dist=0.1,
+            metric='cosine'
+        )
+        
+        umap_embeddings = umap_reducer.fit_transform(embeddings)
+        
+        # Split results
+        project_coords = umap_embeddings[:len(project_texts)]
+        feedback_coords = umap_embeddings[len(project_texts):]
+        
+        # Normalize coordinates
+        all_x = umap_embeddings[:, 0]
+        all_y = umap_embeddings[:, 1]
+        
+        x_min, x_max = all_x.min(), all_x.max()
+        y_min, y_max = all_y.min(), all_y.max()
+        
+        x_range = x_max - x_min
+        y_range = y_max - y_min
+        padding = 0.15
+        
+        x_min -= x_range * padding
+        x_max += x_range * padding
+        y_min -= y_range * padding
+        y_max += y_range * padding
+        
+        def normalize_coord(x, y):
+            return [(x - x_min) / (x_max - x_min), (y - y_min) / (y_max - y_min)]
+        
+        # Create territories
+        territories = []
+        colors = ['#8dd3c7', '#ffffb3', '#bebada', '#fb8072', '#80b1d3', '#fdb462', '#b3de69', '#fccde5']
+        
+        for i, (coord, info) in enumerate(zip(project_coords, project_info)):
+            norm_coord = normalize_coord(coord[0], coord[1])
+            territories.append({
+                'id': info['id'],
+                'title': info['title'],
+                'center': norm_coord,
+                'color': colors[i % len(colors)],
+                'radius': 0.12  # Territory radius
+            })
+        
+        # Create visitor trajectories
+        visitor_paths = defaultdict(list)
+        
+        for i, (coord, meta) in enumerate(zip(feedback_coords, feedback_metadata)):
+            norm_coord = normalize_coord(coord[0], coord[1])
+            visitor_paths[meta['visitor_id']].append({
+                'coord': norm_coord,
+                'project': meta['project'],
+                'timestamp': meta['timestamp']
+            })
+        
+        # Filter to visitors with multiple points
+        trajectories = []
+        trajectory_colors = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33', '#a65628', '#f781bf']
+        
+        trajectory_index = 0
+        for visitor_id, points in visitor_paths.items():
+            if len(points) > 1 and visitor_id != 'anonymous':
+                trajectories.append({
+                    'visitor_id': visitor_id,
+                    'points': points,
+                    'color': trajectory_colors[trajectory_index % len(trajectory_colors)]
+                })
+                trajectory_index += 1
+        
+        result = {
+            'territories': territories,
+            'trajectories': trajectories[:15],  # Limit for performance
+            'feedback_points': [
+                {
+                    'coord': normalize_coord(coord[0], coord[1]),
+                    'project': meta['project'],
+                    'visitor_id': meta['visitor_id'],
+                    'timestamp': meta['timestamp']
+                }
+                for coord, meta in zip(feedback_coords, feedback_metadata)
+            ]
+        }
+        
+        conn.close()
+        return jsonify(result)
+        
+    except Exception as e:
+        conn.close()
+        return jsonify({'error': f'Territory visualization failed: {str(e)}'}), 500
+
 @app.route('/api/exquisite_corpse')
 def get_exquisite_corpse():
     conn = sqlite3.connect(db_path)

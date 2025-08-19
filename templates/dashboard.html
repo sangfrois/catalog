@@ -424,6 +424,7 @@
     <div class="mode-toggle">
         <button class="mode-btn active" onclick="setMode('wordcloud')">Words</button>
         <button class="mode-btn" onclick="setMode('flow')">Flow</button>
+        <button class="mode-btn" onclick="setMode('territories')">Territories</button>
         <button class="mode-btn" onclick="setMode('corpse')">Poiesis</button>
     </div>
     
@@ -514,6 +515,8 @@
             renderWordcloud();
         } else if (mode === 'flow') {
             renderFlow();
+        } else if (mode === 'territories') {
+            renderTerritories();
         } else if (mode === 'corpse') {
             renderExquisiteCorpse();
         }
@@ -725,9 +728,175 @@
             });
     }
 
+    function renderTerritories() {
+        const container = document.getElementById('wordcloud');
+            
+        container.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--muted);">
+                <div style="font-size: 1.2rem; margin-bottom: 1rem;">Loading semantic territories...</div>
+                <div style="font-size: 0.9rem;">Mapping visitor journeys through conceptual space</div>
+            </div>
+        `;
+            
+        fetch('/api/semantic_territories')
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    container.innerHTML = `
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--muted);">
+                            <div style="font-size: 1.2rem; margin-bottom: 1rem;">Territories Forming...</div>
+                            <div style="font-size: 0.9rem;">Collecting more visitor reflections to map the semantic landscape</div>
+                        </div>
+                    `;
+                    return;
+                }
+                    
+                renderSemanticVisualization(container, data);
+            })
+            .catch(error => {
+                console.error('Territory error:', error);
+                container.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--muted);">
+                        <div style="font-size: 1.2rem; margin-bottom: 1rem;">Semantic Space</div>
+                        <div style="font-size: 0.9rem;">Territories are still forming...</div>
+                    </div>
+                `;
+            });
+    }
+        
+    function renderSemanticVisualization(container, data) {
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+            
+        // Create SVG
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('width', width);
+        svg.setAttribute('height', height);
+        svg.style.background = 'transparent';
+            
+        // Create defs for gradients
+        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        svg.appendChild(defs);
+            
+        // Render project territories (background areas)
+        data.territories.forEach(territory => {
+            const centerX = territory.center[0] * width;
+            const centerY = (1 - territory.center[1]) * height;
+            const radius = territory.radius * Math.min(width, height);
+                
+            // Create radial gradient for territory
+            const gradientId = `gradient-${territory.id}`;
+            const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'radialGradient');
+            gradient.setAttribute('id', gradientId);
+            gradient.setAttribute('cx', '50%');
+            gradient.setAttribute('cy', '50%');
+            gradient.setAttribute('r', '50%');
+                
+            const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop1.setAttribute('offset', '0%');
+            stop1.setAttribute('stop-color', territory.color);
+            stop1.setAttribute('stop-opacity', '0.3');
+                
+            const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop2.setAttribute('offset', '100%');
+            stop2.setAttribute('stop-color', territory.color);
+            stop2.setAttribute('stop-opacity', '0.05');
+                
+            gradient.appendChild(stop1);
+            gradient.appendChild(stop2);
+            defs.appendChild(gradient);
+                
+            // Territory circle
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', centerX);
+            circle.setAttribute('cy', centerY);
+            circle.setAttribute('r', radius);
+            circle.setAttribute('fill', `url(#${gradientId})`);
+            circle.setAttribute('stroke', territory.color);
+            circle.setAttribute('stroke-width', '1');
+            circle.setAttribute('stroke-opacity', '0.4');
+            svg.appendChild(circle);
+                
+            // Territory label
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', centerX);
+            text.setAttribute('y', centerY - radius * 0.7);
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('font-size', '12');
+            text.setAttribute('font-weight', 'bold');
+            text.setAttribute('fill', territory.color);
+            text.setAttribute('opacity', '0.8');
+            text.textContent = territory.id.toUpperCase();
+            svg.appendChild(text);
+        });
+            
+        // Render visitor trajectories
+        data.trajectories.forEach(trajectory => {
+            if (trajectory.points.length < 2) return;
+                
+            // Create path
+            let pathData = '';
+            trajectory.points.forEach((point, index) => {
+                const x = point.coord[0] * width;
+                const y = (1 - point.coord[1]) * height;
+                    
+                if (index === 0) {
+                    pathData += `M ${x} ${y}`;
+                } else {
+                    pathData += ` L ${x} ${y}`;
+                }
+            });
+                
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', pathData);
+            path.setAttribute('stroke', trajectory.color);
+            path.setAttribute('stroke-width', '2');
+            path.setAttribute('stroke-opacity', '0.7');
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke-dasharray', '3,2');
+            svg.appendChild(path);
+                
+            // Add points along trajectory
+            trajectory.points.forEach((point, index) => {
+                const x = point.coord[0] * width;
+                const y = (1 - point.coord[1]) * height;
+                    
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', x);
+                circle.setAttribute('cy', y);
+                circle.setAttribute('r', index === 0 ? '4' : index === trajectory.points.length - 1 ? '4' : '2');
+                circle.setAttribute('fill', trajectory.color);
+                circle.setAttribute('stroke', 'white');
+                circle.setAttribute('stroke-width', '1');
+                circle.setAttribute('opacity', '0.9');
+                    
+                // Add hover effect
+                circle.style.cursor = 'pointer';
+                circle.addEventListener('mouseenter', () => {
+                    circle.setAttribute('r', '6');
+                    circle.setAttribute('opacity', '1');
+                });
+                circle.addEventListener('mouseleave', () => {
+                    circle.setAttribute('r', index === 0 || index === trajectory.points.length - 1 ? '4' : '2');
+                    circle.setAttribute('opacity', '0.9');
+                });
+                    
+                // Tooltip
+                const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+                title.textContent = `${trajectory.visitor_id} - ${point.project} (${point.timestamp})`;
+                circle.appendChild(title);
+                    
+                svg.appendChild(circle);
+            });
+        });
+            
+        container.innerHTML = '';
+        container.appendChild(svg);
+    }
+
     function addNewWords(content) {
         const container = document.getElementById('wordcloud');
-        
+            
         // Add pulsing effect to existing words on new feedback
         const existingWords = container.querySelectorAll('.word-node');
         existingWords.forEach(wordEl => {
