@@ -37,21 +37,28 @@ embeddings_cache = {}  # Cache for computed embeddings
 def load_embedding_model():
     global embedding_model
     if embedding_model is None:
-        try:
-            print("Loading sentence transformer model...")
-            embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-            print("Sentence transformer model loaded successfully")
-        except Exception as e:
-            print(f'Error loading sentence transformer: {e}')
-            print("Try running: pip install sentence-transformers torch")
-            # Try alternative model or fallback
+        # Try multiple models in order of preference
+        models_to_try = [
+            'all-MiniLM-L6-v2',
+            'paraphrase-MiniLM-L6-v2',
+            'all-mpnet-base-v2',
+            'distilbert-base-nli-mean-tokens'
+        ]
+        
+        for model_name in models_to_try:
             try:
-                print("Trying alternative model...")
-                embedding_model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
-                print("Alternative sentence transformer model loaded successfully")
-            except Exception as e2:
-                print(f'Alternative model also failed: {e2}')
-                embedding_model = None
+                print(f"Loading sentence transformer model: {model_name}...")
+                embedding_model = SentenceTransformer(model_name)
+                print(f"Sentence transformer model '{model_name}' loaded successfully")
+                return embedding_model
+            except Exception as e:
+                print(f'Error loading {model_name}: {e}')
+                continue
+        
+        print("All sentence transformer models failed to load.")
+        print("Try running: pip install sentence-transformers torch")
+        print("Or check your internet connection for model download.")
+        embedding_model = None
     return embedding_model
 
 # Initialize embedding model at startup
