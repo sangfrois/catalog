@@ -155,7 +155,7 @@ def security_checks():
 
 # Layer 3: Input and Data Sanitization
 def validate_project_name(project_name):
-    if not project_name or project_name not in PROJECTS:
+    if not project_name or (project_name not in PROJECTS and project_name != 'exhibition_general'):
         return False, "Invalid project name"
     return True, ""
 
