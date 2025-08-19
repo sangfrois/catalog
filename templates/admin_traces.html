@@ -555,36 +555,22 @@
                     // Show results
                     document.getElementById('resultTitle').textContent = data.title;
                     
-                    // Render Plotly chart
+                    // Render custom visualization
                     try {
-                        const plotData = JSON.parse(data.plot_json);
-                        console.log('Plot data received, traces:', plotData.data.length);
+                        const vizData = data.visualization_data;
+                        console.log('Visualization data received, trajectories:', vizData.trajectories.length);
                         
                         // Clear any existing plot
                         const plotDiv = document.getElementById('trajectoryPlot');
-                        Plotly.purge(plotDiv);
+                        plotDiv.innerHTML = '';
                         
-                        // Ensure the plot div is visible and has dimensions
-                        plotDiv.style.display = 'block';
-                        plotDiv.style.width = '100%';
-                        plotDiv.style.height = '600px';
+                        // Create custom SVG visualization
+                        renderCustomVisualization(plotDiv, vizData, data.title);
                         
-                        // Create new plot with explicit config
-                        Plotly.newPlot(plotDiv, plotData.data, plotData.layout, {
-                            responsive: true,
-                            displayModeBar: false,
-                            staticPlot: false
-                        }).then(() => {
-                            console.log('Plotly chart rendered successfully');
-                            // Force a resize to ensure proper display
-                            Plotly.Plots.resize(plotDiv);
-                        }).catch(error => {
-                            console.error('Plotly rendering error:', error);
-                            plotDiv.innerHTML = '<div style="color: red; padding: 20px; text-align: center;">Error rendering chart: ' + error.message + '</div>';
-                        });
+                        console.log('Custom visualization rendered successfully');
                     } catch (error) {
-                        console.error('Error parsing plot data:', error);
-                        document.getElementById('trajectoryPlot').innerHTML = '<div style="color: red; padding: 20px; text-align: center;">Error parsing chart data: ' + error.message + '</div>';
+                        console.error('Error rendering visualization:', error);
+                        document.getElementById('trajectoryPlot').innerHTML = '<div style="color: red; padding: 20px; text-align: center;">Error rendering visualization: ' + error.message + '</div>';
                     }
                     
                     document.getElementById('dataPointCount').textContent = data.data_points;
@@ -868,14 +854,213 @@
                 showStatus(`Network error: ${error.message}`, 'error');
             });
         }
-    </script>
-    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
-    <script>
-        // Check if Plotly loaded correctly
-        if (typeof Plotly === 'undefined') {
-            console.error('Plotly failed to load');
-        } else {
-            console.log('Plotly loaded successfully');
+        
+        function renderCustomVisualization(container, vizData, title) {
+            const width = 800;
+            const height = 600;
+            const margin = { top: 60, right: 40, bottom: 60, left: 60 };
+            const plotWidth = width - margin.left - margin.right;
+            const plotHeight = height - margin.top - margin.bottom;
+            
+            // Create SVG
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', width);
+            svg.setAttribute('height', height);
+            svg.style.background = '#fafafa';
+            svg.style.fontFamily = 'Inter, system-ui, sans-serif';
+            
+            // Add title
+            const titleElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            titleElement.setAttribute('x', width / 2);
+            titleElement.setAttribute('y', 30);
+            titleElement.setAttribute('text-anchor', 'middle');
+            titleElement.setAttribute('font-size', '16');
+            titleElement.setAttribute('font-weight', 'bold');
+            titleElement.setAttribute('fill', '#333');
+            titleElement.textContent = `UMAP Trajectories: ${title}`;
+            svg.appendChild(titleElement);
+            
+            // Add axis labels
+            const xLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            xLabel.setAttribute('x', width / 2);
+            xLabel.setAttribute('y', height - 20);
+            xLabel.setAttribute('text-anchor', 'middle');
+            xLabel.setAttribute('font-size', '12');
+            xLabel.setAttribute('fill', '#666');
+            xLabel.textContent = 'Semantic Dimension 1';
+            svg.appendChild(xLabel);
+            
+            const yLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            yLabel.setAttribute('x', 20);
+            yLabel.setAttribute('y', height / 2);
+            yLabel.setAttribute('text-anchor', 'middle');
+            yLabel.setAttribute('font-size', '12');
+            yLabel.setAttribute('fill', '#666');
+            yLabel.setAttribute('transform', `rotate(-90, 20, ${height / 2})`);
+            yLabel.textContent = 'Semantic Dimension 2';
+            svg.appendChild(yLabel);
+            
+            // Create plot area group
+            const plotGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            plotGroup.setAttribute('transform', `translate(${margin.left}, ${margin.top})`);
+            svg.appendChild(plotGroup);
+            
+            // Add subtle grid
+            const gridGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            gridGroup.setAttribute('opacity', '0.2');
+            plotGroup.appendChild(gridGroup);
+            
+            // Vertical grid lines
+            for (let i = 0; i <= 10; i++) {
+                const x = (i / 10) * plotWidth;
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', x);
+                line.setAttribute('y1', 0);
+                line.setAttribute('x2', x);
+                line.setAttribute('y2', plotHeight);
+                line.setAttribute('stroke', '#ccc');
+                line.setAttribute('stroke-width', '0.5');
+                gridGroup.appendChild(line);
+            }
+            
+            // Horizontal grid lines
+            for (let i = 0; i <= 10; i++) {
+                const y = (i / 10) * plotHeight;
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', 0);
+                line.setAttribute('y1', y);
+                line.setAttribute('x2', plotWidth);
+                line.setAttribute('y2', y);
+                line.setAttribute('stroke', '#ccc');
+                line.setAttribute('stroke-width', '0.5');
+                gridGroup.appendChild(line);
+            }
+            
+            // Helper function to create smooth path
+            function createSmoothPath(points) {
+                if (points.length < 2) return '';
+                
+                let path = `M ${points[0][0] * plotWidth} ${(1 - points[0][1]) * plotHeight}`;
+                
+                if (points.length === 2) {
+                    path += ` L ${points[1][0] * plotWidth} ${(1 - points[1][1]) * plotHeight}`;
+                } else {
+                    // Create smooth curves using quadratic bezier curves
+                    for (let i = 1; i < points.length; i++) {
+                        const x = points[i][0] * plotWidth;
+                        const y = (1 - points[i][1]) * plotHeight;
+                        
+                        if (i === 1) {
+                            path += ` L ${x} ${y}`;
+                        } else {
+                            // Control point for smooth curve
+                            const prevX = points[i-1][0] * plotWidth;
+                            const prevY = (1 - points[i-1][1]) * plotHeight;
+                            const controlX = (prevX + x) / 2;
+                            const controlY = (prevY + y) / 2;
+                            path += ` Q ${controlX} ${controlY} ${x} ${y}`;
+                        }
+                    }
+                }
+                
+                return path;
+            }
+            
+            // Render trajectories
+            vizData.trajectories.forEach((trajectory, index) => {
+                const trajectoryGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                trajectoryGroup.setAttribute('class', `trajectory-${index}`);
+                plotGroup.appendChild(trajectoryGroup);
+                
+                // Draw trajectory line
+                if (trajectory.points.length > 1) {
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', createSmoothPath(trajectory.points));
+                    path.setAttribute('stroke', trajectory.color);
+                    path.setAttribute('stroke-width', trajectory.type === 'project' ? '2' : '1.5');
+                    path.setAttribute('stroke-opacity', '0.6');
+                    path.setAttribute('fill', 'none');
+                    path.setAttribute('stroke-dasharray', trajectory.type === 'project' ? '5,3' : 'none');
+                    trajectoryGroup.appendChild(path);
+                }
+                
+                // Draw points
+                trajectory.points.forEach((point, pointIndex) => {
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', point[0] * plotWidth);
+                    circle.setAttribute('cy', (1 - point[1]) * plotHeight);
+                    circle.setAttribute('r', trajectory.type === 'project' ? '4' : '3');
+                    circle.setAttribute('fill', trajectory.color);
+                    circle.setAttribute('stroke', 'white');
+                    circle.setAttribute('stroke-width', '1');
+                    circle.setAttribute('opacity', '0.8');
+                    
+                    // Add hover effects
+                    circle.style.cursor = 'pointer';
+                    circle.addEventListener('mouseenter', () => {
+                        circle.setAttribute('r', trajectory.type === 'project' ? '6' : '5');
+                        circle.setAttribute('opacity', '1');
+                    });
+                    circle.addEventListener('mouseleave', () => {
+                        circle.setAttribute('r', trajectory.type === 'project' ? '4' : '3');
+                        circle.setAttribute('opacity', '0.8');
+                    });
+                    
+                    // Add tooltip
+                    const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+                    title.textContent = `${trajectory.name} - Point ${pointIndex + 1}`;
+                    circle.appendChild(title);
+                    
+                    trajectoryGroup.appendChild(circle);
+                });
+            });
+            
+            // Create legend
+            const legendGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            legendGroup.setAttribute('transform', `translate(${width - 180}, ${margin.top + 20})`);
+            svg.appendChild(legendGroup);
+            
+            // Legend background
+            const legendBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            legendBg.setAttribute('x', -10);
+            legendBg.setAttribute('y', -10);
+            legendBg.setAttribute('width', 170);
+            legendBg.setAttribute('height', Math.min(vizData.trajectories.length * 25 + 20, 200));
+            legendBg.setAttribute('fill', 'rgba(255,255,255,0.9)');
+            legendBg.setAttribute('stroke', 'rgba(200,200,200,0.5)');
+            legendBg.setAttribute('stroke-width', '1');
+            legendBg.setAttribute('rx', '5');
+            legendGroup.appendChild(legendBg);
+            
+            // Legend items
+            vizData.trajectories.slice(0, 8).forEach((trajectory, index) => {
+                const legendItem = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                legendItem.setAttribute('transform', `translate(0, ${index * 25})`);
+                
+                // Legend color indicator
+                const colorRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                colorRect.setAttribute('x', 0);
+                colorRect.setAttribute('y', 0);
+                colorRect.setAttribute('width', 15);
+                colorRect.setAttribute('height', 15);
+                colorRect.setAttribute('fill', trajectory.color);
+                colorRect.setAttribute('rx', '2');
+                legendItem.appendChild(colorRect);
+                
+                // Legend text
+                const legendText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                legendText.setAttribute('x', 20);
+                legendText.setAttribute('y', 12);
+                legendText.setAttribute('font-size', '10');
+                legendText.setAttribute('fill', '#333');
+                legendText.textContent = trajectory.name.length > 15 ? 
+                    trajectory.name.substring(0, 15) + '...' : trajectory.name;
+                legendItem.appendChild(legendText);
+                
+                legendGroup.appendChild(legendItem);
+            });
+            
+            container.appendChild(svg);
         }
     </script>
 </body>

@@ -14,9 +14,6 @@ from itertools import combinations
 from langdetect import detect, LangDetectException
 import umap
 from sentence_transformers import SentenceTransformer
-import plotly.graph_objects as go
-import plotly.express as px
-from plotly.utils import PlotlyJSONEncoder
 import json
 import io
 import base64
@@ -1039,39 +1036,62 @@ def admin_compute_embeddings():
             conn.close()
             return jsonify({'error': f'UMAP failed: {str(e)}'}), 500
         
-        # Create minimalistic Plotly visualization
+        # Create custom visualization data
         print("Creating visualization...")
         try:
-            fig = go.Figure()
+            # Normalize coordinates to 0-1 range for easier frontend handling
+            x_coords = umap_embeddings[:, 0]
+            y_coords = umap_embeddings[:, 1]
+            
+            x_min, x_max = x_coords.min(), x_coords.max()
+            y_min, y_max = y_coords.min(), y_coords.max()
+            
+            # Add padding
+            x_range = x_max - x_min
+            y_range = y_max - y_min
+            padding = 0.1
+            
+            x_min -= x_range * padding
+            x_max += x_range * padding
+            y_min -= y_range * padding
+            y_max += y_range * padding
+            
+            # Normalize to 0-1
+            normalized_coords = []
+            for i in range(len(umap_embeddings)):
+                norm_x = (x_coords[i] - x_min) / (x_max - x_min)
+                norm_y = (y_coords[i] - y_min) / (y_max - y_min)
+                normalized_coords.append([norm_x, norm_y])
+            
+            # Group data by trajectory type
+            visualization_data = {
+                'coordinates': normalized_coords,
+                'trajectory_type': trajectory_type,
+                'trajectories': []
+            }
+            
+            # Define color palette
+            colors = [
+                '#8dd3c7', '#ffffb3', '#bebada', '#fb8072', '#80b1d3',
+                '#fdb462', '#b3de69', '#fccde5', '#d9d9d9', '#bc80bd',
+                '#ccebc5', '#ffed6f', '#e78ac3', '#a6d854', '#ffd92f'
+            ]
             
             if trajectory_type == 'project':
                 # Group by project
                 unique_projects = list(set(meta['project'] for meta in text_metadata))
-                colors = px.colors.qualitative.Set3[:len(unique_projects)]
                 
                 for i, project in enumerate(unique_projects):
                     project_indices = [j for j, meta in enumerate(text_metadata) if meta['project'] == project]
-                    project_coords = umap_embeddings[project_indices]
+                    project_coords = [normalized_coords[idx] for idx in project_indices]
                     
-                    # Add scatter points
-                    fig.add_trace(go.Scatter(
-                        x=project_coords[:, 0],
-                        y=project_coords[:, 1],
-                        mode='markers+lines',
-                        name=project,
-                        marker=dict(
-                            size=8,
-                            color=colors[i % len(colors)],
-                            opacity=0.8,
-                            line=dict(width=1, color='white')
-                        ),
-                        line=dict(
-                            width=2,
-                            color=colors[i % len(colors)],
-                            dash='dot'
-                        ),
-                        hovertemplate='<b>%{fullData.name}</b><br>Point %{pointNumber}<extra></extra>'
-                    ))
+                    visualization_data['trajectories'].append({
+                        'name': project,
+                        'color': colors[i % len(colors)],
+                        'points': project_coords,
+                        'indices': project_indices,
+                        'type': 'project'
+                    })
             else:
                 # Group by visitor
                 visitor_counts = defaultdict(int)
@@ -1080,82 +1100,20 @@ def admin_compute_embeddings():
                 
                 # Only show visitors with multiple entries
                 multi_entry_visitors = [v for v, count in visitor_counts.items() if count > 1]
-                colors = px.colors.qualitative.Pastel[:len(multi_entry_visitors)]
                 
                 for i, visitor in enumerate(multi_entry_visitors):
                     visitor_indices = [j for j, meta in enumerate(text_metadata) if meta['visitor_id'] == visitor]
-                    visitor_coords = umap_embeddings[visitor_indices]
+                    visitor_coords = [normalized_coords[idx] for idx in visitor_indices]
                     
-                    # Add scatter points with trajectory
-                    fig.add_trace(go.Scatter(
-                        x=visitor_coords[:, 0],
-                        y=visitor_coords[:, 1],
-                        mode='markers+lines',
-                        name=visitor,
-                        marker=dict(
-                            size=6,
-                            color=colors[i % len(colors)],
-                            opacity=0.9,
-                            line=dict(width=1, color='rgba(255,255,255,0.3)')
-                        ),
-                        line=dict(
-                            width=1.5,
-                            color=colors[i % len(colors)],
-                            smoothing=1.3
-                        ),
-                        hovertemplate='<b>%{fullData.name}</b><br>Entry %{pointNumber}<extra></extra>'
-                    ))
+                    visualization_data['trajectories'].append({
+                        'name': visitor,
+                        'color': colors[i % len(colors)],
+                        'points': visitor_coords,
+                        'indices': visitor_indices,
+                        'type': 'visitor'
+                    })
             
-            # Minimalistic styling with better visibility
-            fig.update_layout(
-                title=dict(
-                    text=f'UMAP Trajectories: {title}',
-                    font=dict(size=16, color='#333333', family='Inter, system-ui, sans-serif'),
-                    x=0.5
-                ),
-                xaxis=dict(
-                    title=dict(
-                        text='Semantic Dimension 1',
-                        font=dict(size=12, color='#666666')
-                    ),
-                    showgrid=True,
-                    gridcolor='rgba(200,200,200,0.3)',
-                    zeroline=False,
-                    showticklabels=True,
-                    tickfont=dict(size=10, color='#666666')
-                ),
-                yaxis=dict(
-                    title=dict(
-                        text='Semantic Dimension 2',
-                        font=dict(size=12, color='#666666')
-                    ),
-                    showgrid=True,
-                    gridcolor='rgba(200,200,200,0.3)',
-                    zeroline=False,
-                    showticklabels=True,
-                    tickfont=dict(size=10, color='#666666')
-                ),
-                plot_bgcolor='rgba(255,255,255,0.95)',
-                paper_bgcolor='rgba(255,255,255,1)',
-                font=dict(family='Inter, system-ui, sans-serif', color='#333333'),
-                legend=dict(
-                    bgcolor='rgba(255,255,255,0.9)',
-                    bordercolor='rgba(200,200,200,0.5)',
-                    borderwidth=1,
-                    font=dict(size=10, color='#333333')
-                ),
-                margin=dict(l=60, r=40, t=80, b=60),
-                width=800,
-                height=600,
-                showlegend=True
-            )
-            
-            # Convert to JSON for frontend
-            plot_json = json.dumps(fig, cls=PlotlyJSONEncoder)
-            print(f"Plot JSON length: {len(plot_json)}")
-            print(f"Plot JSON preview: {plot_json[:200]}...")
-            
-            print("Visualization created successfully")
+            print("Visualization data created successfully")
             
         except Exception as e:
             conn.close()
@@ -1180,7 +1138,7 @@ def admin_compute_embeddings():
             'trajectory_type': trajectory_type,
             'target_id': target_id,
             'title': title,
-            'plot_json': plot_json,
+            'visualization_data': visualization_data,
             'data_points': len(trajectory_data),
             'trajectory_data': trajectory_data
         }
