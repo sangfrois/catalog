@@ -92,6 +92,26 @@
             transform: translate(-2px, -2px);
             box-shadow: 2px 2px 0 var(--secondary);
         }
+
+        .nav-home-link {
+            display: none;
+            padding: 0;
+            border: none;
+            background: transparent;
+        }
+
+        .nav-home-link:hover {
+            background: transparent;
+            transform: scale(1.1);
+            box-shadow: none;
+        }
+
+        .nav-home-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 1px solid var(--accent);
+        }
         
         .container {
             max-width: 1200px;
@@ -117,7 +137,7 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            z-index: 9999;
+            z-index: 10001;
             background: transparent;
             border: 1px solid var(--accent);
             border-radius: 4px;
@@ -174,6 +194,9 @@
         }
 
         @media (max-width: 768px) {
+            .nav-home-link {
+                display: block;
+            }
             .nav-toggle {
                 display: block;
             }
@@ -208,6 +231,7 @@
         </span>
     </button>
     <nav class="nav">
+        <a href="/" class="nav-home-link"><img src="{{ url_for('static', filename='img/favicon.png') }}" alt="Home" class="nav-home-icon"></a>
         <a href="/" id="nav-map">Map</a>
         <a href="/dashboard" id="nav-dashboard">Dashboard</a>
         <a href="/trace" id="nav-trace">Trace</a>
