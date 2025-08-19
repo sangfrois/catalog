@@ -779,6 +779,78 @@ def admin_recent_activity():
     
     return jsonify({'recent_activity': recent_activity[:20]})
 
+@app.route('/admin/cleanup_duplicates', methods=['POST'])
+def admin_cleanup_duplicates():
+    if request.args.get('token') != ADMIN_TOKEN:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    
+    try:
+        # Find duplicates based on content, project, and visitor_id
+        # Keep the earliest entry (smallest id) for each duplicate group
+        c.execute('''
+            SELECT content, project, visitor_id, COUNT(*) as duplicate_count,
+                   MIN(id) as keep_id, GROUP_CONCAT(id) as all_ids
+            FROM feedback 
+            GROUP BY content, project, visitor_id 
+            HAVING COUNT(*) > 1
+            ORDER BY duplicate_count DESC
+        ''')
+        
+        duplicates = c.fetchall()
+        
+        if not duplicates:
+            conn.close()
+            return jsonify({
+                'status': 'No duplicates found',
+                'removed_count': 0,
+                'duplicate_groups': 0
+            })
+        
+        total_removed = 0
+        duplicate_groups = len(duplicates)
+        
+        for content, project, visitor_id, dup_count, keep_id, all_ids in duplicates:
+            # Parse the comma-separated IDs
+            id_list = [int(id_str) for id_str in all_ids.split(',')]
+            # Remove the ID we want to keep
+            ids_to_remove = [id_val for id_val in id_list if id_val != keep_id]
+            
+            # Delete the duplicate entries
+            for id_to_remove in ids_to_remove:
+                c.execute('DELETE FROM feedback WHERE id = ?', (id_to_remove,))
+                total_removed += 1
+        
+        # Also clean up duplicate visits
+        c.execute('''
+            DELETE FROM visits 
+            WHERE id NOT IN (
+                SELECT MIN(id) 
+                FROM visits 
+                GROUP BY project, visitor_id, date(timestamp)
+            )
+        ''')
+        
+        visits_removed = c.rowcount
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'status': 'Duplicates removed successfully',
+            'removed_feedback_count': total_removed,
+            'removed_visits_count': visits_removed,
+            'duplicate_groups': duplicate_groups,
+            'details': f'Removed {total_removed} duplicate feedback entries from {duplicate_groups} groups and {visits_removed} duplicate visits'
+        })
+        
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return jsonify({'error': f'Cleanup failed: {str(e)}'}), 500
+
 @app.route('/admin/compute_embeddings', methods=['POST'])
 def admin_compute_embeddings():
     token = request.args.get('token')
