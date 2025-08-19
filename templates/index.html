@@ -279,7 +279,7 @@
 
     .main-title {
         position: absolute;
-        top: 15%;
+        top: 12%;
         left: 50%;
         transform: translateX(-50%);
         font-family: 'Times New Roman', serif;
@@ -292,17 +292,18 @@
         letter-spacing: 2px;
     }
 
-    .plan-title {
+    .plan-subtitle {
         position: absolute;
-        bottom: -30px;
-        right: 20px;
+        top: 20%;
+        left: 50%;
+        transform: translateX(-50%);
         font-family: 'Times New Roman', serif;
         font-size: 1rem;
         color: var(--muted);
         font-weight: normal;
         z-index: 5;
         margin: 0;
-        text-align: right;
+        text-align: center;
         letter-spacing: 1px;
         font-style: italic;
         opacity: 0.8;
@@ -356,19 +357,19 @@
             transform: none;
             text-align: center;
             margin-top: 8vh;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
             font-size: 2rem;
         }
         
-        .plan-title {
+        .plan-subtitle {
             position: relative;
             top: auto;
             left: auto;
             transform: none;
             text-align: center;
-            margin-top: 1rem;
+            margin-top: 0.5rem;
             margin-bottom: 2rem;
-            font-size: 1.2rem;
+            font-size: 1rem;
         }
         .map-container {
             height: auto;
@@ -565,6 +566,7 @@
     </div>
     
     <h1 class="main-title">Machinic Encounters</h1>
+    <h2 class="plan-subtitle">Interactive Exhibition Map</h2>
     <div class="floorplan" id="floorplan">
         <div class="space-label">Studio Hydro-Québec</div>
         <div class="entrance-symbol" style="left: 85%; top: 5%;">ENTRANCE</div>
@@ -579,7 +581,6 @@
         </div>
         {% endfor %}
     </div>
-    <h2 class="plan-title">Exhibition Plan</h2>
     
     <div class="project-preview" id="projectPreview">
         <img id="previewThumb" src="" alt="" style="width: 100%; height: 120px; object-fit: cover; margin-bottom: 10px; border: 1px solid var(--primary);">
@@ -720,15 +721,14 @@
         window.location.href = `/project/${projectId}`;
     }
 
-    document.getElementById('readMoreLink').addEventListener('click', function() {
-        const full = document.getElementById('fullIntro');
-        if (full.style.display === 'none') {
-            full.style.display = 'block';
-            this.textContent = 'Read Less';
-        } else {
-            full.style.display = 'none';
-            this.textContent = 'Read More';
-        }
+    document.getElementById('readMoreBtn').addEventListener('click', function() {
+        document.getElementById('shortIntro').style.display = 'none';
+        document.getElementById('fullIntro').style.display = 'block';
+    });
+    
+    document.getElementById('readLessBtn').addEventListener('click', function() {
+        document.getElementById('shortIntro').style.display = 'block';
+        document.getElementById('fullIntro').style.display = 'none';
     });
 </script>
 {% endblock %}
