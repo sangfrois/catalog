@@ -213,13 +213,15 @@ def cleanup_database_duplicates():
     c = conn.cursor()
     
     try:
-        # Find and remove duplicate feedback entries
+        # Find and remove duplicate feedback entries based on content and project only
+        # This will catch traffic test duplicates that have same content but different visitor_ids
         c.execute('''
-            SELECT content, project, visitor_id, COUNT(*) as duplicate_count,
+            SELECT content, project, COUNT(*) as duplicate_count,
                    MIN(id) as keep_id, GROUP_CONCAT(id) as all_ids
             FROM feedback 
-            GROUP BY content, project, visitor_id 
+            GROUP BY content, project 
             HAVING COUNT(*) > 1
+            ORDER BY duplicate_count DESC
         ''')
         
         duplicates = c.fetchall()
@@ -228,11 +230,13 @@ def cleanup_database_duplicates():
         if duplicates:
             print(f"Found {len(duplicates)} groups of duplicate feedback entries")
             
-            for content, project, visitor_id, dup_count, keep_id, all_ids in duplicates:
+            for content, project, dup_count, keep_id, all_ids in duplicates:
                 # Parse the comma-separated IDs
                 id_list = [int(id_str) for id_str in all_ids.split(',')]
                 # Remove the ID we want to keep
                 ids_to_remove = [id_val for id_val in id_list if id_val != keep_id]
+                
+                print(f"Removing {len(ids_to_remove)} duplicates for project '{project}': '{content[:50]}...'")
                 
                 # Delete the duplicate entries
                 for id_to_remove in ids_to_remove:
@@ -241,7 +245,7 @@ def cleanup_database_duplicates():
             
             print(f"Removed {total_removed} duplicate feedback entries")
         
-        # Clean up duplicate visits
+        # Clean up duplicate visits - be more aggressive here too
         c.execute('''
             DELETE FROM visits 
             WHERE id NOT IN (
@@ -854,13 +858,13 @@ def admin_cleanup_duplicates():
     c = conn.cursor()
     
     try:
-        # Find duplicates based on content, project, and visitor_id
-        # Keep the earliest entry (smallest id) for each duplicate group
+        # Find duplicates based on content and project only (more aggressive)
+        # This will catch traffic test duplicates with same content but different visitor_ids
         c.execute('''
-            SELECT content, project, visitor_id, COUNT(*) as duplicate_count,
+            SELECT content, project, COUNT(*) as duplicate_count,
                    MIN(id) as keep_id, GROUP_CONCAT(id) as all_ids
             FROM feedback 
-            GROUP BY content, project, visitor_id 
+            GROUP BY content, project 
             HAVING COUNT(*) > 1
             ORDER BY duplicate_count DESC
         ''')
@@ -878,7 +882,7 @@ def admin_cleanup_duplicates():
         total_removed = 0
         duplicate_groups = len(duplicates)
         
-        for content, project, visitor_id, dup_count, keep_id, all_ids in duplicates:
+        for content, project, dup_count, keep_id, all_ids in duplicates:
             # Parse the comma-separated IDs
             id_list = [int(id_str) for id_str in all_ids.split(',')]
             # Remove the ID we want to keep
