@@ -1143,6 +1143,8 @@ def admin_compute_embeddings():
             
             # Convert to JSON for frontend
             plot_json = json.dumps(fig, cls=PlotlyJSONEncoder)
+            print(f"Plot JSON length: {len(plot_json)}")
+            print(f"Plot JSON preview: {plot_json[:200]}...")
             
             print("Visualization created successfully")
             

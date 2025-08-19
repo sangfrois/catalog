@@ -556,11 +556,27 @@
                     document.getElementById('resultTitle').textContent = data.title;
                     
                     // Render Plotly chart
-                    const plotData = JSON.parse(data.plot_json);
-                    Plotly.newPlot('trajectoryPlot', plotData.data, plotData.layout, {
-                        responsive: true,
-                        displayModeBar: false
-                    });
+                    try {
+                        const plotData = JSON.parse(data.plot_json);
+                        console.log('Plot data received:', plotData);
+                        
+                        // Clear any existing plot
+                        Plotly.purge('trajectoryPlot');
+                        
+                        // Create new plot
+                        Plotly.newPlot('trajectoryPlot', plotData.data, plotData.layout, {
+                            responsive: true,
+                            displayModeBar: false
+                        }).then(() => {
+                            console.log('Plotly chart rendered successfully');
+                        }).catch(error => {
+                            console.error('Plotly rendering error:', error);
+                            document.getElementById('trajectoryPlot').innerHTML = '<p style="color: red;">Error rendering chart: ' + error.message + '</p>';
+                        });
+                    } catch (error) {
+                        console.error('Error parsing plot data:', error);
+                        document.getElementById('trajectoryPlot').innerHTML = '<p style="color: red;">Error parsing chart data: ' + error.message + '</p>';
+                    }
                     
                     document.getElementById('dataPointCount').textContent = data.data_points;
                     
@@ -844,6 +860,14 @@
             });
         }
     </script>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+    <script>
+        // Check if Plotly loaded correctly
+        if (typeof Plotly === 'undefined') {
+            console.error('Plotly failed to load');
+        } else {
+            console.log('Plotly loaded successfully');
+        }
+    </script>
 </body>
 </html>
