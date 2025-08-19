@@ -145,7 +145,7 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            z-index: 2001; /* This is the new value */
+            z-index: 99999;
             background: transparent;
             border: 1px solid var(--accent);
             border-radius: 4px;
@@ -224,7 +224,7 @@
                 transition: transform 0.3s ease-in-out;
                 padding: 0;
                 border: none;
-                z-index: 2001; /* This is the fix. Must be > 2000 */
+                z-index: 99999;
             }
             .nav.nav-open {
                 transform: translateX(0);
