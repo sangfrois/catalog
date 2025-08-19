@@ -213,13 +213,17 @@ def cleanup_database_duplicates():
     c = conn.cursor()
     
     try:
-        # Find and remove duplicate feedback entries based on content and project only
-        # This will catch traffic test duplicates that have same content but different visitor_ids
+        # Get total count before cleanup
+        c.execute('SELECT COUNT(*) FROM feedback')
+        total_before = c.fetchone()[0]
+        print(f"Total feedback entries before cleanup: {total_before}")
+        
+        # More aggressive duplicate removal - group by content only (ignoring project and visitor_id)
         c.execute('''
-            SELECT content, project, COUNT(*) as duplicate_count,
+            SELECT content, COUNT(*) as duplicate_count,
                    MIN(id) as keep_id, GROUP_CONCAT(id) as all_ids
             FROM feedback 
-            GROUP BY content, project 
+            GROUP BY LOWER(TRIM(content))
             HAVING COUNT(*) > 1
             ORDER BY duplicate_count DESC
         ''')
@@ -228,24 +232,42 @@ def cleanup_database_duplicates():
         total_removed = 0
         
         if duplicates:
-            print(f"Found {len(duplicates)} groups of duplicate feedback entries")
+            print(f"Found {len(duplicates)} groups of duplicate content")
             
-            for content, project, dup_count, keep_id, all_ids in duplicates:
+            for content, dup_count, keep_id, all_ids in duplicates:
                 # Parse the comma-separated IDs
                 id_list = [int(id_str) for id_str in all_ids.split(',')]
                 # Remove the ID we want to keep
                 ids_to_remove = [id_val for id_val in id_list if id_val != keep_id]
                 
-                print(f"Removing {len(ids_to_remove)} duplicates for project '{project}': '{content[:50]}...'")
+                print(f"Removing {len(ids_to_remove)} duplicates of: '{content[:50]}...'")
                 
                 # Delete the duplicate entries
                 for id_to_remove in ids_to_remove:
                     c.execute('DELETE FROM feedback WHERE id = ?', (id_to_remove,))
                     total_removed += 1
-            
-            print(f"Removed {total_removed} duplicate feedback entries")
         
-        # Clean up duplicate visits - be more aggressive here too
+        # Also remove entries that are just variations of common test phrases
+        test_patterns = [
+            'This is truly thought-provoking',
+            'I\'m not sure I understand, but it\'s beautiful',
+            'The connection between technology and art is fascinating',
+            'This piece challenges my perceptions',
+            'A very powerful and moving installation',
+            'I feel a sense of wonder',
+            'It makes me think about the future in a new way',
+            'The use of AI is both brilliant and a little unsettling',
+            'I could spend hours with this'
+        ]
+        
+        for pattern in test_patterns:
+            c.execute('DELETE FROM feedback WHERE content LIKE ?', (f'%{pattern}%',))
+            pattern_removed = c.rowcount
+            if pattern_removed > 0:
+                print(f"Removed {pattern_removed} test entries matching: '{pattern[:30]}...'")
+                total_removed += pattern_removed
+        
+        # Clean up duplicate visits more aggressively
         c.execute('''
             DELETE FROM visits 
             WHERE id NOT IN (
@@ -259,12 +281,17 @@ def cleanup_database_duplicates():
         if visits_removed > 0:
             print(f"Removed {visits_removed} duplicate visit entries")
         
+        # Get final count
+        c.execute('SELECT COUNT(*) FROM feedback')
+        total_after = c.fetchone()[0]
+        
         conn.commit()
         
-        if total_removed > 0 or visits_removed > 0:
-            print("Database cleanup completed successfully")
-        else:
-            print("No duplicates found - database is clean")
+        print(f"Database cleanup completed:")
+        print(f"  - Before: {total_before} feedback entries")
+        print(f"  - After: {total_after} feedback entries")
+        print(f"  - Removed: {total_removed} duplicate feedback entries")
+        print(f"  - Removed: {visits_removed} duplicate visit entries")
             
     except Exception as e:
         print(f"Database cleanup failed: {e}")
