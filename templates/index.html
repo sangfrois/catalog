@@ -7,7 +7,8 @@
         width: 100vw;
         height: 100vh;
         background: var(--bg);
-        overflow: hidden;
+        overflow: visible;
+        padding-bottom: 100px;
     }
     
     .floorplan {
@@ -293,7 +294,7 @@
 
     .plan-title {
         position: absolute;
-        bottom: -50px;
+        bottom: -80px;
         left: 50%;
         transform: translateX(-50%);
         font-family: 'Times New Roman', serif;
@@ -304,6 +305,9 @@
         margin: 0;
         text-align: center;
         letter-spacing: 1px;
+        background: var(--bg);
+        padding: 10px 20px;
+        border: 1px solid var(--primary);
     }
 
     .project-list {
