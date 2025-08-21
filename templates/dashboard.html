@@ -311,15 +311,26 @@
         max-width: 200px;
     }
 
-    .dashboard-qr-code {
+    .qr-container {
         position: absolute;
         bottom: 20px;
         right: 20px;
-        width: 100px;
-        height: 100px;
         opacity: 0.2;
         z-index: 10;
         pointer-events: none;
+        text-align: center;
+    }
+
+    .qr-container img {
+        width: 100px;
+        height: 100px;
+    }
+
+    .qr-container p {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        margin-top: 5px;
+        color: var(--primary);
     }
 
     @media (max-width: 768px) {
@@ -416,11 +427,19 @@
             font-size: 0.9rem;
         }
         
-        .dashboard-qr-code {
-            width: 60px;
-            height: 60px;
+        .qr-container {
             bottom: 10px;
             right: 10px;
+        }
+
+        .qr-container img {
+            width: 60px;
+            height: 60px;
+        }
+        
+        .qr-container p {
+            font-size: 8px;
+            margin-top: 2px;
         }
     }
 </style>
@@ -455,7 +474,10 @@
         <div>Active presences: <span id="visitorCount">0</span></div>
         <div>Last update: <span id="lastUpdate">--:--</span></div>
     </div>
-    <img src="{{ url_for('static', filename='img/qr_code.png') }}" alt="QR Code" class="dashboard-qr-code">
+    <div class="qr-container">
+        <img src="{{ url_for('static', filename='img/qr_code.png') }}" alt="QR Code">
+        <p>Leave your trace</p>
+    </div>
 </div>
 {% endblock %}
 
