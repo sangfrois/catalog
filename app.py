@@ -404,6 +404,10 @@ def project(name):
     proj = PROJECTS.get(name, {"title": "Unknown", "desc": "", "thumb": "", "artist": ""})
     return render_template('project.html', project=proj, project_id=name)
 
+@app.route('/curator-statement')
+def curator_statement():
+    return render_template('curator_statement.html')
+
 # Layer 4: Application and Endpoint Security - Secure Administrative Endpoints
 ADMIN_TOKEN = "your_very_secret_token"
 
