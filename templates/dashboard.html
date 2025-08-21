@@ -315,7 +315,6 @@
         position: absolute;
         bottom: 20px;
         right: 20px;
-        opacity: 0.2;
         z-index: 10;
         pointer-events: none;
         text-align: center;
@@ -324,13 +323,15 @@
     .qr-container img {
         width: 100px;
         height: 100px;
+        opacity: 0.2;
     }
 
     .qr-container p {
         font-family: 'JetBrains Mono', monospace;
         font-size: 10px;
         margin-top: 5px;
-        color: var(--primary);
+        color: var(--accent);
+        text-shadow: 0 0 8px var(--accent);
     }
 
     @media (max-width: 768px) {
