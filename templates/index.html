@@ -372,31 +372,6 @@
         text-decoration: underline;
     }
 
-    .qr-container {
-        position: absolute;
-        bottom: 20px;
-        right: 20px;
-        background: rgba(10, 10, 10, 0.9);
-        padding: 15px;
-        border: 1px solid var(--primary);
-        z-index: 10;
-        text-align: center;
-    }
-
-    .qr-container img {
-        width: 120px;
-        height: 120px;
-        display: block;
-    }
-
-    .qr-container p {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.8rem;
-        margin-top: 10px;
-        margin-bottom: 0;
-        color: var(--primary);
-    }
-
     @media (max-width: 768px) {
         .main-title {
             position: relative;
@@ -448,9 +423,6 @@
             width: 70px !important;
             height: 25px !important;
             font-size: 10px !important;
-        }
-        .qr-container {
-            display: none;
         }
     }
 
@@ -775,11 +747,6 @@
             <li><a href="/project/{{ project_id }}">{{ loop.index }}. {{ project.title }}</a></li>
             {% endfor %}
         </ul>
-    </div>
-
-    <div class="qr-container">
-        <img src="{{ url_for('static', filename='img/qr_code.png') }}" alt="QR Code">
-        <p>Leave your trace</p>
     </div>
 </div>
 
