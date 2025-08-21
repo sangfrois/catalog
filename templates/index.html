@@ -443,11 +443,22 @@
     }
     .intro-section h2 {
         font-family: 'Times New Roman', serif;
-        font-size: 2.5rem;
+        font-size: 2rem;
         color: var(--primary);
-        text-align: center;
-        margin-bottom: 2rem;
+        text-align: left;
+        margin-bottom: 0.5rem;
         font-weight: normal;
+    }
+    .read-more-link {
+        display: block;
+        text-align: left;
+        margin-bottom: 2rem;
+        color: var(--accent);
+        text-decoration: none;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    .read-more-link:hover {
+        text-decoration: underline;
     }
     .intro-section h3 {
         font-family: 'JetBrains Mono', monospace;
@@ -522,38 +533,6 @@
     }
     .logo-container img[src*="AppliedAI.png"] {
         filter: invert(1) grayscale(1);
-    }
-
-    .expand-btn {
-        background: none;
-        border: 2px solid var(--accent);
-        color: var(--accent);
-        padding: 10px 20px;
-        font-size: 1rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        margin: 2rem auto;
-        display: block;
-        font-family: 'JetBrains Mono', monospace;
-        letter-spacing: 1px;
-    }
-    
-    .expand-btn:hover {
-        background: var(--accent);
-        color: var(--secondary);
-        transform: translate(-2px, -2px);
-        box-shadow: 2px 2px 0 var(--accent);
-    }
-
-    .expanded-content {
-        display: none;
-        opacity: 0;
-        transition: opacity 0.5s ease;
-    }
-
-    .expanded-content.show {
-        display: block;
-        opacity: 1;
     }
     
     .exhibition-feedback {
@@ -677,7 +656,7 @@
         <p>An exhibition exploring the thresholds of human-machine encounters</p>
         <div class="intro-instructions">
             <p class="instruction-text">Navigate the space • Discover projects • Share your thoughts</p>
-            <p class="instruction-subtext">Your reflections become part of the collective mind</p>
+            <p class="instruction-subtext">Leave a trace of your encounters</p>
         </div>
         <button class="enter-btn" onclick="enterExhibition()">ENTER</button>
     </div>
@@ -746,31 +725,14 @@
 </div>
 
 <div class="intro-section">
-    <h2>A Word from the Curator</h2>
+    <h2>Curator Statement</h2>
+    <a href="/curator-statement" class="read-more-link">read the full introduction →</a>
     <p class="lead-paragraph">Today, we live amidst the ubiquitous abundance of technology. Our machines orient our perception of reality, rendering possible certain activities while occluding others, all the while unproblematically accompanying us in the flow of reality.</p>
-
-    <p>This is where all us cyborgs live, as we adapt unconsciously to the functioning of the <span class="highlight-text">search algorithms</span>, <span class="highlight-text">recommendation systems</span>, <span class="highlight-text">affective computing</span>, and <span class="highlight-text">social media analytics</span>. However rigid the exterior may be, and no matter what complex relationalities they harbor, machines in our current paradigm are often designed to disappear. They ought to become so intuitive, functional, and seamlessly integrated into use that we should no longer notice the very technology itself.</p>
     
-    <p>And so, it seems we are not able to ‘encounter’ the machines, even if we tried. Their <span class="highlight-text">black box</span> exterior obscures the complex movements of capital, matter, data, bodies, and desires. In a time when dominant understandings of technology are handed down in fetishes by elite interests to serve their own ends, it seems ever more urgent to invent our own ways of thinking, sensing, and relating to machines.</p>
-    
-    <blockquote class="pull-quote">
-        This exhibition arises from that very impulse: to encounter machines in their strangeness, in their manifold agencies, and shifting manifestations.
-    </blockquote>
-    
-    <p>The 8 research-creation works gathered here explore the machinic in its multiple registers: as assemblages of interlocking mechanisms; as mythic sites of projection and possibility; and as aesthetic systems for composing new forms of connection.</p>
+    <h3>Play and Process</h3>
+    <p>The Machinic Encounters residency group have developed their projects over the summer of 2025. The group stayed in conversation with one another through phases of exploration, development, and production. The pieces were developed in tandem with collective reflections, in an iteratively processual manner, which is the hallmark of research-creation approaches. This allowed the projects to not only change in dialogue with one another, but also flourish in unexpected ways. As artist-researchers have grappled with the affordances and limitations of machine learning technologies, their works became heuristics for exploring the contemporary cultural moment.</p>
 
-    <p>Each piece invites us to linger in the encounter: we are not to solve and figure out the machines, but to sense their pulsing rhythm through <span class="highlight-text">play, curiosity, and wonder</span>.</p>
-
-    <button class="expand-btn" id="expandBtn" onclick="toggleExpanded()">Read More</button>
-    
-    <div class="expanded-content" id="expandedContent">
-        <p>Here, art becomes instructive, able to reveal the interiority of the machines without compromising their ‘magic’. Artistic practice reanimates the machinic with the unexpected, the mysterious, and the sublime. It opens space for us to discover new meanings, trace invisible mechanisms, and craft <span class="highlight-text">counter-narratives</span>. In a time when dominant understandings of technology are handed down by elite interests to serve their own ends, it is ever more urgent to invent our own ways of thinking, sensing, and relating to machines.</p>
-
-        <h3>Play and Process</h3>
-        <p>The Machinic Encounters residency group have developed their projects over the summer of 2025. The group stayed in conversation with one another through phases of exploration, development, and production. The pieces were developed in tandem with collective reflections, in an iteratively processual manner, which is the hallmark of research-creation approaches. This allowed the projects to not only change in dialogue with one another, but also flourish in unexpected ways. As artist-researchers have grappled with the affordances and limitations of machine learning technologies, their works became heuristics for exploring the contemporary cultural moment.</p>
-
-        <p>The works in this residency program explore machinic agents in their multiplicity. We encounter machines as companions that never arrive; as instruments of governance and oppression; as agents that disclose new forms of aesthetics; as mediums for thought and divination; and as play interlocutors. The variety of perspectives that the artist-researchers brought in reveals the unsettled nature of machines, and how their meanings shift as we playfully explore different potentials with them. Grown weary of the contemporary moment in which our machines -as well as us- are entangled in the structures of power that work to advance inequalities and injustices, we find solace in the fact that we are yet to find tools for our mutual emancipation. Living in a society that is robbed of their capacity to imagine, we seek to ignite some wonder and awe against the face of an increasingly constricting technological order.</p>
-    </div>
+    <p>The works in this residency program explore machinic agents in their multiplicity. We encounter machines as companions that never arrive; as instruments of governance and oppression; as agents that disclose new forms of aesthetics; as mediums for thought and divination; and as play interlocutors. The variety of perspectives that the artist-researchers brought in reveals the unsettled nature of machines, and how their meanings shift as we playfully explore different potentials with them. Grown weary of the contemporary moment in which our machines -as well as us- are entangled in the structures of power that work to advance inequalities and injustices, we find solace in the fact that we are yet to find tools for our mutual emancipation. Living in a society that is robbed of their capacity to imagine, we seek to ignite some wonder and awe against the face of an increasingly constricting technological order.</p>
     
     <div class="exhibition-feedback">
         <h3>Share Your Thoughts on the Exhibition</h3>
@@ -887,20 +849,6 @@
         }).catch(err => console.log('Visit tracking failed:', err));
         
         window.location.href = `/project/${projectId}`;
-    }
-    
-    function toggleExpanded() {
-        const expandedContent = document.getElementById('expandedContent');
-        const expandBtn = document.getElementById('expandBtn');
-        
-        if (expandedContent.classList.contains('show')) {
-            expandedContent.classList.remove('show');
-            expandBtn.textContent = 'Read More';
-            expandBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else {
-            expandedContent.classList.add('show');
-            expandBtn.textContent = 'Read Less';
-        }
     }
     
     document.addEventListener('DOMContentLoaded', function() {
