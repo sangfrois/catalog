@@ -311,6 +311,16 @@
         max-width: 200px;
     }
 
+    .qr-area-cover {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 150px;
+        height: 150px;
+        background: var(--bg);
+        z-index: 5;
+    }
+
     .qr-container {
         position: absolute;
         bottom: 20px;
@@ -428,6 +438,11 @@
             font-size: 0.9rem;
         }
         
+        .qr-area-cover {
+            width: 90px;
+            height: 110px;
+        }
+        
         .qr-container {
             bottom: 10px;
             right: 10px;
@@ -475,6 +490,7 @@
         <div>Active presences: <span id="visitorCount">0</span></div>
         <div>Last update: <span id="lastUpdate">--:--</span></div>
     </div>
+    <div class="qr-area-cover"></div>
     <div class="qr-container">
         <img src="{{ url_for('static', filename='img/qr_code.png') }}" alt="QR Code">
         <p>Leave your trace</p>
