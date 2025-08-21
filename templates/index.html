@@ -277,6 +277,29 @@
         letter-spacing: 1px;
     }
 
+    .stage-element {
+        position: absolute;
+        left: 5%;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 15px;
+        height: 100px;
+        border: 1px solid var(--muted);
+        background: rgba(255, 255, 255, 0.05);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .stage-label {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        color: var(--muted);
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        letter-spacing: 1px;
+    }
+
     .main-title {
         position: absolute;
         top: 12%;
@@ -693,6 +716,9 @@
     <div class="floorplan" id="floorplan">
         <div class="space-label">Studio Hydro-Québec</div>
         <div class="entrance-symbol" style="left: 85%; top: 5%;">ENTRANCE</div>
+        <div class="stage-element">
+            <span class="stage-label">STAGE</span>
+        </div>
         {% for project_id, project in projects.items() %}
         <div class="project-hotspot" 
              style="left: {{ project.position.x }}%; top: {{ project.position.y }}%;"
