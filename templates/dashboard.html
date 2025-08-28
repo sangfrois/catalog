@@ -484,15 +484,10 @@
     </div>
     
     <div class="stats-overlay">
+        <div>Grab a QR code to leave your trace</div>
         <div>Thoughts collected: <span id="thoughtCount">0</span></div>
-        <div>Active connections: <span id="connectionCount">0</span></div>
         <div>Active presences: <span id="visitorCount">0</span></div>
         <div>Last update: <span id="lastUpdate">--:--</span></div>
-    </div>
-    <div class="qr-area-cover"></div>
-    <div class="qr-container">
-        <img src="{{ url_for('static', filename='img/qr_code.png') }}" alt="QR Code">
-        <p>Leave your trace</p>
     </div>
 </div>
 {% endblock %}
